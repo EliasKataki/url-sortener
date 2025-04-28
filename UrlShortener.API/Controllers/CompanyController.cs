@@ -19,24 +19,35 @@ namespace UrlShortener.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Company>>> GetCompanies()
+        public async Task<ActionResult<IEnumerable<object>>> GetCompanies()
         {
             return await _context.Companies
                 .Include(c => c.Urls)
                 .Include(c => c.Tokens)
-                .Select(c => new Company
-                {
+                .Select(c => new {
                     Id = c.Id,
                     Name = c.Name,
-                    CreatedAt = c.CreatedAt,
-                    Tokens = c.Tokens,
-                    Urls = c.Urls
+                    CreatedAt = c.CreatedAt.ToUniversalTime().ToString("o"),
+                    Tokens = c.Tokens.Select(t => new {
+                        t.Id,
+                        t.Value,
+                        t.RemainingUses,
+                        t.CreatedAt,
+                        t.ExpiresAt
+                    }),
+                    Urls = c.Urls.Select(u => new {
+                        u.Id,
+                        u.LongUrl,
+                        u.ShortUrl,
+                        u.CreatedAt,
+                        u.ExpiresAt
+                    })
                 })
                 .ToListAsync();
         }
 
         [HttpPost]
-        public async Task<ActionResult<Company>> CreateCompany([FromBody] CreateCompanyDto dto)
+        public async Task<ActionResult<object>> CreateCompany([FromBody] CreateCompanyDto dto)
         {
             var company = new Company
             {
@@ -69,7 +80,7 @@ namespace UrlShortener.API.Controllers
             {
                 Id = company.Id,
                 Name = company.Name,
-                CreatedAt = company.CreatedAt
+                CreatedAt = company.CreatedAt.ToUniversalTime().ToString("o")
                 // Token'ları veya URL'leri burada dönmeye gerek yok
             };
 
@@ -77,7 +88,7 @@ namespace UrlShortener.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Company>> GetCompany(int id)
+        public async Task<ActionResult<object>> GetCompany(int id)
         {
             var company = await _context.Companies
                 .Include(c => c.Urls)
@@ -89,7 +100,25 @@ namespace UrlShortener.API.Controllers
                 return NotFound();
             }
 
-            return company;
+            return new {
+                Id = company.Id,
+                Name = company.Name,
+                CreatedAt = company.CreatedAt.ToUniversalTime().ToString("o"),
+                Tokens = company.Tokens.Select(t => new {
+                    t.Id,
+                    t.Value,
+                    t.RemainingUses,
+                    t.CreatedAt,
+                    t.ExpiresAt
+                }),
+                Urls = company.Urls.Select(u => new {
+                    u.Id,
+                    u.LongUrl,
+                    u.ShortUrl,
+                    u.CreatedAt,
+                    u.ExpiresAt
+                })
+            };
         }
 
         // YENİ: Token kullanım hakkını güncelleme endpoint'i

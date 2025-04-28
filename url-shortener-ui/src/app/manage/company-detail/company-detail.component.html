@@ -11,7 +11,7 @@
       <h3>{{ company.name }} Detayları
         <button class="btn btn-sm btn-danger ms-2" (click)="deleteCompany(company.id)"><i class="fas fa-trash"></i> Firma Sil</button>
       </h3>
-      <p>Oluşturulma Tarihi: {{ company.createdAt | date:'dd.MM.yyyy HH:mm' }}</p>
+      <p>Oluşturulma Tarihi: {{ getLocalTime(company.createdAt) }}</p>
       <hr>
 
       <div class="row">
@@ -34,7 +34,7 @@
                     <div class="d-flex w-100 justify-content-between align-items-center">
                       <div>
                         <span class="text-monospace small d-block">{{ token.value }}</span>
-                        <small class="text-muted">Oluş: {{ token.createdAt | date:'short' }} | Bitiş: {{ token.expiresAt | date:'short' }}</small>
+                        <small class="text-muted">Oluş: {{ token.createdAt | date:'short':'':'tr-TR' }} | Bitiş: {{ token.expiresAt | date:'short':'':'tr-TR' }}</small>
                       </div>
                       <div class="d-flex align-items-center">
                         <input type="number" 
@@ -88,8 +88,8 @@
                     <span class="text-muted ms-2">({{ url.shortUrl }})</span> (Tıklanma: {{ url.clickCount }})
                   </span>
                   <div class="d-flex align-items-center gap-2">
-                    <input type="date" class="form-control form-control-sm" style="width: 160px;" [(ngModel)]="url.expiresAt" [ngModelOptions]="{standalone: true}" [min]="todayString" />
-                    <span class="ms-2 text-muted" *ngIf="url.expiresAt">Bitiş: {{ url.expiresAt | date:'dd.MM.yyyy' }}</span>
+                    <input type="datetime-local" class="form-control form-control-sm" style="width: 210px;" [(ngModel)]="url.expiresAt" [ngModelOptions]="{standalone: true}" [min]="todayString + 'T00:00'" />
+                    <span class="ms-2 text-muted" *ngIf="url.expiresAt">Bitiş: {{ url.expiresAt | date:'dd.MM.yyyy HH:mm':'':'tr-TR' }}</span>
                     <button class="btn btn-sm btn-primary" (click)="updateUrlExpiresAt(url)"><i class="fas fa-save"></i></button>
                     <button class="btn btn-sm btn-danger" (click)="deleteUrl(url.id)"><i class="fas fa-trash"></i></button>
                   </div>

@@ -29,7 +29,7 @@
           <tr *ngFor="let company of companies">
             <td>{{ company.id }}</td>
             <td>{{ company.name }}</td>
-            <td>{{ company.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
+            <td>{{ getLocalTime(company.createdAt) }}</td>
             <td>{{ company.tokens?.length || 0 }}</td>
             <td>{{ company.urls?.length || 0 }}</td>
             <td>

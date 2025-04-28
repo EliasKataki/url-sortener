@@ -64,7 +64,7 @@ namespace UrlShortener.API.Controllers
             await _context.SaveChangesAsync();
 
             // Dönen yanıtta token bilgisini göndermemek daha iyi olabilir
-            var resultDto = new { id = url.Id, longUrl = url.LongUrl, shortUrl = url.ShortUrl, createdAt = url.CreatedAt, companyId = url.CompanyId };
+            var resultDto = new { id = url.Id, longUrl = url.LongUrl, shortUrl = url.ShortUrl, createdAt = url.CreatedAt.ToUniversalTime().ToString("o"), companyId = url.CompanyId };
             
             return CreatedAtAction(nameof(GetUrl), new { id = url.Id }, resultDto);
         }
@@ -98,7 +98,7 @@ namespace UrlShortener.API.Controllers
         }
 
         [HttpGet("details/{id}")]
-        public async Task<ActionResult<Url>> GetUrl(int id)
+        public async Task<ActionResult<object>> GetUrl(int id)
         {
             var url = await _context.Urls
                 .Include(u => u.Clicks)
@@ -109,7 +109,22 @@ namespace UrlShortener.API.Controllers
                 return NotFound();
             }
 
-            return url;
+            return new {
+                id = url.Id,
+                longUrl = url.LongUrl,
+                shortUrl = url.ShortUrl,
+                createdAt = url.CreatedAt.ToUniversalTime().ToString("o"),
+                expiresAt = url.ExpiresAt,
+                companyId = url.CompanyId,
+                clickCount = url.ClickCount,
+                clicks = url.Clicks.Select(c => new {
+                    c.Id,
+                    c.IpAddress,
+                    c.UserAgent,
+                    c.Country,
+                    c.City
+                })
+            };
         }
 
         [HttpDelete("{id}")]

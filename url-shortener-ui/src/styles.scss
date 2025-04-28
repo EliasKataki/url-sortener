@@ -71,6 +71,12 @@ footer .container {
   border-color: var(--bs-primary);
 }
 
+.btn-primary:hover, .btn-primary:focus {
+  background-color: #bdbdbd !important; /* Siteyle uyumlu gri */
+  border-color: #bdbdbd !important;
+  color: #fff !important;
+}
+
 /* Tablo stilleri */
 .table {
   td, th {

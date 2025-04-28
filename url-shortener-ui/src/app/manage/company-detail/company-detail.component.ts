@@ -267,4 +267,22 @@ export class CompanyDetailComponent implements OnInit {
       }
     });
   }
+
+  getIstanbulTime(utcString: string): string {
+    if (!utcString) return '';
+    const date = new Date(utcString);
+    return date.toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul', hour12: false });
+  }
+
+  getLocalTime(utcString: string): string {
+    if (!utcString) return '';
+    const date = new Date(utcString);
+    date.setHours(date.getHours() + 3); // Türkiye için 3 saat ekle
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${day}.${month}.${year} ${hour}:${minute}`;
+  }
 } 
