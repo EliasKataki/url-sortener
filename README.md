@@ -2,7 +2,7 @@
 
 ## Proje Hakkında
 
-URL Kısaltma projesi, uzun URL'leri kısa ve kullanımı kolay bağlantılara dönüştüren bir web uygulamasıdır. Proje, .NET Core API ve veritabanı backend ile oluşturulmuştur. Uygulama, URL kısaltma, yönlendirme, istatistik izleme ve loglama özellikleri sunar.
+URL Kısaltma projesi, uzun URL'leri kısa ve kullanımı kolay bağlantılara dönüştüren bir web uygulamasıdır. Proje, .NET Core API ve Angular tabanlı bir arayüz ile oluşturulmuştur. Uygulama, URL kısaltma, yönlendirme, istatistik izleme, loglama, token yönetimi, firma yönetimi ve kısa linkler için bitiş tarihi (expiresAt) belirleme gibi gelişmiş özellikler sunar.
 
 ## Sistem Gereksinimleri
 
@@ -21,6 +21,7 @@ Uygulama iki ayrı bileşenden oluştuğu için (API ve UI), iki ayrı terminal 
 ```bash
 cd UrlShortener.API
 dotnet restore
+dotnet ef database update
 dotnet run
 ```
 API başarıyla başladığında http://localhost:5161 adresinde çalışacak ve Swagger UI'a http://localhost:5161/swagger adresinden erişebileceksiniz.
@@ -43,7 +44,8 @@ npm install -g @angular/cli
 Proje iki ana bileşenden oluşur:
 
 1. **Backend API (UrlShortener.API)**: .NET Core API projesi
-2. **Veritabanı**: SQL Server 2022 (Docker konteynerinde çalışır)
+2. **Frontend (url-shortener-ui)**: Angular tabanlı kullanıcı arayüzü
+3. **Veritabanı**: SQL Server 2022 (Docker konteynerinde çalışır)
 
 ### Veritabanı Şeması
 
@@ -53,17 +55,32 @@ Veritabanı aşağıdaki tablolardan oluşur:
   - Id (int, PK)
   - LongUrl (nvarchar(max))
   - ShortUrl (nvarchar(max))
-  - CreatedDate (datetime2)
-  - ExpirationDate (datetime2)
+  - CreatedAt (datetime2)
+  - ExpiresAt (datetime2, nullable)
+  - ClickCount (int)
+  - CompanyId (int, nullable, FK)
 
-- **UrlAccesses**: URL erişim kayıtlarını takip eder
+- **Tokens**: Firma bazlı token yönetimi
+  - Id (int, PK)
+  - Value (nvarchar)
+  - RemainingUses (int)
+  - CompanyId (int, FK)
+  - CreatedAt (datetime2)
+  - ExpiresAt (datetime2)
+
+- **Companies**: Firma yönetimi
+  - Id (int, PK)
+  - Name (nvarchar)
+  - CreatedAt (datetime2)
+
+- **UrlClicks**: URL tıklama kayıtları
   - Id (int, PK)
   - UrlId (int, FK)
-  - AccessDate (datetime2)
-  - IsSuccessful (bit)
-  - ErrorMessage (nvarchar(max), nullable)
-  - UserAgent (nvarchar(max), nullable)
-  - IpAddress (nvarchar(max), nullable)
+  - ClickedAt (datetime2)
+  - IpAddress (nvarchar)
+  - UserAgent (nvarchar)
+  - Country (nvarchar)
+  - City (nvarchar)
 
 - **UrlLogs**: Sistemdeki tüm URL işlemlerini loglar
   - Id (int, PK)
@@ -82,56 +99,57 @@ API aşağıdaki endpoint'leri sunar:
 
 | HTTP Metodu | Endpoint | Açıklama |
 |-------------|----------|----------|
-| POST | /api/url/shorten | Uzun URL'yi kısaltır |
-| GET | /api/url/{code} | Kısa URL'yi kullanarak yönlendirme yapar |
-| GET | /api/url/stats/{fullUrl} | URL istatistiklerini görüntüler |
-| GET | /api/url/list | Tüm URL'leri listeler |
-| GET | /api/url/list/memory | Bellek tabanlı URL listesini görüntüler |
-| GET | /api/url/list/database | Veritabanından URL listesini alır |
-| GET | /api/url/logs | Sistem loglarını görüntüler |
+| POST | / | Uzun URL'yi kısaltır (token opsiyonel) |
+| GET | /{shortUrl} | Kısa URL'yi kullanarak yönlendirme yapar (expiresAt kontrolü dahil) |
+| PUT | /{id}/expires | Kısa URL'nin bitiş tarihini günceller |
+| DELETE | /{id} | Kısa URL'yi siler |
+| GET | /details/{id} | Kısa URL detaylarını getirir |
+| GET | /stats/{fullUrl} | URL istatistiklerini görüntüler |
+| GET | /list | Tüm URL'leri listeler |
+| GET | /list/memory | Bellek tabanlı URL listesini görüntüler |
+| GET | /list/database | Veritabanından URL listesini alır |
+| GET | /logs | Sistem loglarını görüntüler |
 
 ### Örnek İstek ve Yanıtlar
 
-#### URL Kısaltma (POST /api/url/shorten)
+#### URL Kısaltma (POST /)
 
 İstek:
 ```json
 {
-  "url": "https://www.example.com"
+  "longUrl": "https://www.example.com",
+  "token": "firmanintokeni" // opsiyonel
 }
 ```
-
 Yanıt:
 ```json
 {
-  "shortUrl": "http://localhost:5161/api/url/abC12345"
+  "id": 1,
+  "longUrl": "https://www.example.com",
+  "shortUrl": "UJ15L2",
+  "createdAt": "2025-04-28T08:17:00Z",
+  "companyId": 1
 }
 ```
 
-#### URL İstatistikleri (GET /api/url/stats/{fullUrl})
-
-Yanıt:
+#### Bitiş Tarihi Güncelleme (PUT /{id}/expires)
+İstek:
 ```json
 {
-  "originalUrl": "https://www.example.com",
-  "shortCode": "abC12345",
-  "shortUrl": "http://localhost:5161/api/url/abC12345",
-  "createdDate": "2025-04-22T10:30:00",
-  "expirationDate": "2025-05-22T10:30:00",
-  "totalAccesses": 5,
-  "successfulAccesses": 4,
-  "failedAccesses": 1,
-  "lastAccess": "2025-04-22T15:45:00",
-  "accessDetails": [
-    {
-      "accessDate": "2025-04-22T15:45:00",
-      "isSuccessful": true,
-      "userAgent": "Mozilla/5.0...",
-      "ipAddress": "127.0.0.1"
-    }
-  ]
+  "expiresAt": "2025-05-11T00:00:00.000Z"
 }
 ```
+Yanıt: `204 No Content`
+
+#### Kısa Linke Tıklama (GET /{shortUrl})
+- Eğer expiresAt dolmamışsa: Uzun linke yönlendirir.
+- Eğer expiresAt geçmişse: `410 Gone` ve "Bu kısa linkin süresi doldu." mesajı döner.
+
+## Frontend Özellikleri
+- Firma ve token yönetimi
+- Kısa linklerin bitiş tarihi (expiresAt) ayarlanabilir ve güncellenebilir
+- Kısa linklerin tıklanma sayısı ve detayları görüntülenebilir
+- Kullanıcı dostu, responsive Angular arayüzü
 
 ## Kurulum Adımları
 
@@ -150,6 +168,12 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=SqlServer2024!" -p 1433:1433
 3. Bağımlılıkları yükleyin: `dotnet restore`
 4. Migration'ları uygulayın: `dotnet ef database update`
 5. API'yi çalıştırın: `dotnet run`
+
+### Frontend Kurulumu
+
+1. UI dizinine gidin: `cd url-shortener-ui`
+2. Bağımlılıkları yükleyin: `npm install`
+3. Angular uygulamasını başlatın: `ng serve`
 
 ## Geliştirici Notları
 
@@ -171,14 +195,14 @@ Yeni bir origin eklemek için `Program.cs` dosyasında CORS ayarlarını güncel
    - Uzun URL alınır
    - http:// veya https:// yoksa https:// eklenir
    - URL encode edilir
-   - Benzersiz 8 karakterlik bir kod oluşturulur
+   - Benzersiz 6 karakterlik bir kod oluşturulur
    - Veritabanına kaydedilir
    - Kısa URL döndürülür
 
 2. URL yönlendirme:
    - Kısa kod alınır
    - Veritabanında aranır
-   - Süre kontrolü yapılır
+   - expiresAt kontrolü yapılır
    - İstatistikler güncellenir
    - Orijinal URL'ye yönlendirilir
 
@@ -188,7 +212,7 @@ API, aşağıdaki hata durumlarını ele alır:
 
 - Geçersiz URL formatı
 - Bulunamayan URL kodları
-- Süresi dolmuş URL'ler
+- Süresi dolmuş URL'ler (410 Gone)
 - Veritabanı bağlantı hataları
 
 Tüm hatalar loglanır ve uygun HTTP durum kodlarıyla birlikte hata mesajları döndürülür.
