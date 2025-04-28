@@ -1,0 +1,321 @@
+/* You can add global styles to this file, and also import other style files */
+@import "bootstrap/scss/bootstrap"; // Bootstrap importu tekrar aktif edildi.
+
+// Octapull benzeri renk paleti (turuncu/gri/beyaz)
+:root {
+  --bs-primary: #fd7e14; // Turuncu
+  --bs-primary-rgb: 253, 126, 20;
+  --bs-secondary: #6c757d; // Gri (aynı kalabilir)
+  --bs-light: #f8f9fa; // Açık gri arka planlar (aynı kalabilir)
+  --bs-dark: #343a40; // Biraz daha koyu gri metinler
+  --bs-body-font-family: 'Inter', 'Segoe UI', Roboto, "Helvetica Neue", sans-serif;
+  --bs-body-bg: var(--bs-light); // Arka planı açık gri yapalım
+  --bs-link-color: var(--bs-primary); // Link rengi turuncu
+  --bs-link-hover-color: darken(var(--bs-primary), 10%); // Link hover rengi
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--bs-body-font-family);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bs-body-bg); // Genel arka plan rengi
+  position: relative;
+}
+
+body::before {
+  display: none;
+}
+
+main {
+  flex: 1 0 auto; // Footer'ın aşağıda kalmasını sağlar
+}
+
+footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100vw;
+  background: #f8f9fa;
+  z-index: 1;
+  border-top: 1px solid #dee2e6;
+  padding: 2px 0 2px 0 !important;
+  font-size: 0.89rem;
+  min-height: unset;
+}
+
+footer .container {
+  padding: 0 !important;
+}
+
+/* Daha modern kartlar */
+.card {
+  border: none; // Kenarlıkları kaldıralım
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); // Daha belirgin gölge
+  border-radius: 0.75rem; // Daha yuvarlak köşeler
+}
+
+/* Butonlar */
+.btn {
+  border-radius: 0.5rem; // Buton köşeleri
+  padding: 0.75rem 1.25rem;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+/* Tablo stilleri */
+.table {
+  td, th {
+    vertical-align: middle;
+  }
+  thead th {
+    background-color: var(--bs-light);
+    border-bottom-width: 1px;
+  }
+}
+
+/* Sekme stilleri */
+.nav-pills .nav-link {
+    color: var(--bs-dark);
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+}
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: var(--bs-primary); // Aktif sekme rengi turuncu
+  color: white;
+}
+
+/* Genel container */
+.container, .container-fluid {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+/* Genel iyileştirmeler */
+a {
+  cursor: pointer;
+}
+
+/* Form stilleri */
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+  //transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  &:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+  }
+}
+
+.form-control-lg {
+    padding: 0.75rem 1.25rem;
+    font-size: 1.1rem;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    background-color: transparent;
+    padding-left: 0;
+}
+
+/* Breadcrumb link rengi */
+.breadcrumb-item a {
+  color: var(--bs-primary);
+  text-decoration: none;
+  &:hover {
+    color: var(--bs-link-hover-color);
+  }
+}
+
+/* Normal URL kısaltma formu için genişlik ayarı */
+.container .row .col-md-8.col-lg-6 {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+/* Sol sabit turuncu menü barı - dar ve hover ile genişleyen yapı */
+.sidebar-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 56px;
+  height: 100vh;
+  background: var(--bs-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 2rem;
+  z-index: 1000;
+  transition: width 0.2s cubic-bezier(.4,0,.2,1);
+  overflow-x: hidden;
+}
+.sidebar-menu:hover {
+  width: 180px;
+}
+
+.sidebar-menu button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  margin: 1rem 0;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.07), 0 1.5px 4px 0 rgba(0,0,0,0.08);
+}
+.sidebar-menu:hover button {
+  opacity: 1;
+  pointer-events: auto;
+}
+.sidebar-menu button.active,
+.sidebar-menu button:hover {
+  background: rgba(255,255,255,0.15);
+  box-shadow: 0 4px 16px 0 rgba(0,0,0,0.10), 0 2px 8px 0 rgba(0,0,0,0.10);
+}
+
+/* Sadece ikon göstermek için (isteğe bağlı) */
+.sidebar-menu .menu-icon {
+  display: block;
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
+}
+
+/* İçerik alanı menüye göre kaydırılır */
+.main-content {
+  margin-left: 56px;
+  padding: 2rem 1rem;
+  transition: margin-left 0.2s cubic-bezier(.4,0,.2,1);
+  padding-bottom: 110px !important;
+}
+.sidebar-menu:hover ~ .main-content {
+  margin-left: 180px;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .sidebar-menu {
+    width: 44px;
+    padding-top: 1rem;
+  }
+  .sidebar-menu:hover {
+    width: 120px;
+  }
+  .sidebar-menu button {
+    font-size: 1rem;
+    padding: 0.5rem 0.5rem;
+  }
+  .main-content {
+    margin-left: 44px;
+    padding: 1rem 0.5rem;
+  }
+  .sidebar-menu:hover ~ .main-content {
+    margin-left: 120px;
+  }
+}
+
+.main-content.center-content {
+  min-height: unset;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-left: 56px;
+  padding: 2rem 1rem 1rem 1rem;
+  transition: margin-left 0.2s cubic-bezier(.4,0,.2,1);
+  padding-bottom: 110px !important;
+}
+.sidebar-menu:hover ~ .main-content.center-content {
+  margin-left: 180px;
+}
+
+.card, .container, .row, .col-12 {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.go-home-btn {
+  position: fixed;
+  top: 18px;
+  right: 32px;
+  z-index: 2000;
+  background: var(--bs-primary);
+  color: #fff;
+  border: none;
+  border-radius: 2rem;
+  padding: 0.5rem 1.3rem;
+  font-weight: 600;
+  font-size: 1.05rem;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.go-home-btn:hover {
+  background: #fff;
+  color: var(--bs-primary);
+  box-shadow: 0 4px 16px 0 rgba(0,0,0,0.13);
+  border: 1.5px solid var(--bs-primary);
+}
+
+@media (max-width: 700px) {
+  .main-content.center-content {
+    margin-left: 44px;
+    padding: 1rem 0.5rem;
+  }
+  .sidebar-menu:hover ~ .main-content.center-content {
+    margin-left: 120px;
+  }
+  .go-home-btn {
+    right: 10px;
+    top: 10px;
+    font-size: 0.95rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(40,40,40,0.45);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-confirm {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);
+  padding: 2rem 2.2rem 1.5rem 2.2rem;
+  min-width: 320px;
+  max-width: 90vw;
+  text-align: center;
+  z-index: 3100;
+}
+.modal-confirm h5 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+}
+.modal-confirm p {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}

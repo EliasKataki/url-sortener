@@ -1,0 +1,31 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-12 col-lg-12">
+      <div class="card shadow-lg">
+        <div class="card-body p-4">
+          <h3 class="card-title text-center mb-4">URL Kısalt</h3>
+
+          <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+          <div *ngIf="shortUrl" class="alert alert-success">
+            Kısa URL: 
+            <a [href]="getShortUrl()" target="_blank">{{ getShortUrl() }}</a>
+            <button class="btn btn-sm btn-outline-secondary ms-2 py-0 px-1" (click)="copyToClipboard(getShortUrl())" title="Kopyala">
+              <i class="far fa-copy"></i>
+            </button>
+          </div>
+
+          <form (ngSubmit)="shortenUrl()">
+            <div class="mb-3">
+              <label for="longUrl" class="form-label">Kısaltılacak URL:</label>
+              <input type="url" class="form-control form-control-lg" id="longUrl" [(ngModel)]="longUrl" name="longUrl" placeholder="https://ornek.com/uzun-bir-adres" required>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">Kısalt</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
