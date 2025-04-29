@@ -1,5 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
-@import "bootstrap/scss/bootstrap"; // Bootstrap importu tekrar aktif edildi.
+@use "bootstrap/scss/bootstrap" as *;
 
 // Octapull benzeri renk paleti (turuncu/gri/beyaz)
 :root {

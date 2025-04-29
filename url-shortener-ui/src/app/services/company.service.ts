@@ -67,12 +67,11 @@ export class CompanyService {
 
   // URL silme
   deleteUrl(urlId: number): Observable<any> {
-    // URL silme için ayrı bir controller olabilir, örnek endpoint:
-    return this.http.delete(`http://localhost:5161/api/url/${urlId}`);
+    return this.http.delete(`http://localhost:5161/${urlId}`);
   }
 
   // URL expiresAt güncelleme
-  updateUrlExpiresAt(urlId: number, body: { expiresAt: string | null }): Observable<any> {
-    return this.http.put(`http://localhost:5161/${urlId}/expires`, body, { headers: { 'Content-Type': 'application/json' } });
+  updateUrlExpiresAt(urlId: number, dto: { expiresAt: string | null }): Observable<any> {
+    return this.http.put(`http://localhost:5161/${urlId}/expires`, dto);
   }
 } 

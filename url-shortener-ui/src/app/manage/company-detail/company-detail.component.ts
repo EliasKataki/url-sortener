@@ -159,10 +159,19 @@ export class CompanyDetailComponent implements OnInit {
     }
   }
 
-  refreshCompanyDetails(): void {
-     // Mevcut ID ile firma detaylarını tekrar çekmek için ngOnInit'teki logic tekrar çalıştırılır
-     // Daha iyi bir yöntem state management kullanmak olabilir ama şimdilik bu yeterli
-     this.ngOnInit(); 
+  refreshCompanyDetails() {
+    this.company$ = this.route.params.pipe(
+      switchMap(params => {
+        const id = +params['id'];
+        return this.companyService.getCompanyDetails(id).pipe(
+          catchError(error => {
+            this.errorMessage = 'Firma detayları alınamadı.';
+            console.error(error);
+            return of(null);
+          })
+        );
+      })
+    );
   }
 
   modalOpen = false;
@@ -252,12 +261,8 @@ export class CompanyDetailComponent implements OnInit {
   }
 
   updateUrlExpiresAt(url: Url) {
-    let expiresAt = url.expiresAt ? new Date(url.expiresAt) : null;
-    if (expiresAt) {
-      expiresAt.setHours(0, 0, 0, 0);
-    }
-    const isoDate = expiresAt ? expiresAt.toISOString() : null;
-    this.companyService.updateUrlExpiresAt(url.id, { expiresAt: isoDate }).subscribe({
+    const expiresAt: string | null = url.expiresAt ? String(url.expiresAt) : null;
+    this.companyService.updateUrlExpiresAt(url.id, { expiresAt }).subscribe({
       next: () => {
         this.refreshCompanyDetails();
       },
@@ -271,18 +276,36 @@ export class CompanyDetailComponent implements OnInit {
   getIstanbulTime(utcString: string): string {
     if (!utcString) return '';
     const date = new Date(utcString);
-    return date.toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul', hour12: false });
+    return date.toLocaleString('tr-TR', { 
+      timeZone: 'Europe/Istanbul',
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   getLocalTime(utcString: string): string {
     if (!utcString) return '';
     const date = new Date(utcString);
-    date.setHours(date.getHours() + 3); // Türkiye için 3 saat ekle
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hour = String(date.getHours()).padStart(2, '0');
-    const minute = String(date.getMinutes()).padStart(2, '0');
-    return `${day}.${month}.${year} ${hour}:${minute}`;
+    return date.toLocaleString('tr-TR', { 
+      timeZone: 'Europe/Istanbul',
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  handleClick(url: Url, event: Event) {
+    event.preventDefault();
+    window.open(this.getFullShortUrl(url.shortUrl), '_blank');
+    setTimeout(() => {
+      this.refreshCompanyDetails();
+    }, 1000); // 1 saniye sonra veriyi tekrar çek
   }
 } 

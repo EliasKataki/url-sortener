@@ -116,7 +116,8 @@ namespace UrlShortener.API.Controllers
                     u.LongUrl,
                     u.ShortUrl,
                     u.CreatedAt,
-                    u.ExpiresAt
+                    u.ExpiresAt,
+                    clickCount = u.ClickCount
                 })
             };
         }
