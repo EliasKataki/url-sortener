@@ -79,8 +79,8 @@ Veritabanı aşağıdaki tablolardan oluşur:
   - ClickedAt (datetime2)
   - IpAddress (nvarchar)
   - UserAgent (nvarchar)
-  - Country (nvarchar)
-  - City (nvarchar)
+  - Latitude (float, nullable)
+  - Longitude (float, nullable)
 
 - **UrlLogs**: Sistemdeki tüm URL işlemlerini loglar
   - Id (int, PK)
@@ -227,3 +227,25 @@ Tüm hatalar loglanır ve uygun HTTP durum kodlarıyla birlikte hata mesajları 
 
 - Entity Framework için uygun indeksler
 - API yanıt hızını optimize etmek için asenkron metodlar 
+
+## Loglama Sistemi
+
+### Backend (API) Logları
+- Tüm önemli işlemler (URL oluşturma, yönlendirme, silme, token güncelleme, firma işlemleri, hata durumları) otomatik olarak loglanır.
+- Loglar hem konsola hem de `UrlShortener.API/logs/` klasöründe günlük dosyalar halinde tutulur.
+- Log formatı örneği:
+  ```
+  [2025-04-30 10:37:55.147 +03:00 INF] [COMPANY][CREATE] Yeni firma oluşturuluyor: Acme, Token adedi: 5
+  [2025-04-30 10:37:55.234 +03:00 ERR] [TOKEN][UPDATE][INVALID] Negatif kullanım hakkı girildi. TokenID: 42
+  ```
+- Loglar sayesinde API'de ne olduğu, hangi işlemin hangi ID ile yapıldığı ve hata/başarı durumu kolayca takip edilebilir.
+
+### Frontend (Angular) Logları
+- Tüm önemli kullanıcı işlemleri, hata ve uyarılar tarayıcı konsoluna açıklayıcı şekilde loglanır.
+- Örnek loglar:
+  ```
+  [TOKEN] Token #5 kalan hak güncelleniyor: 10
+  [URL][SİLME][BAŞARILI] URL silindi. ID: 123
+  [HARİTA][TIKLAMA][UYARI] Konum alınamadı, klasik yönlendirme yapılıyor.
+  ```
+- Geliştirici konsolunu açarak (F12) tüm işlemleri adım adım takip edebilirsiniz. 
