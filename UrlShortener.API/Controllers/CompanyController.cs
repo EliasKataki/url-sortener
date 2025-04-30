@@ -4,6 +4,7 @@ using UrlShortener.API.Data;
 using UrlShortener.API.Models;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace UrlShortener.API.Controllers
 {
@@ -12,16 +13,19 @@ namespace UrlShortener.API.Controllers
     public class CompanyController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<CompanyController> _logger;
 
-        public CompanyController(ApplicationDbContext context)
+        public CompanyController(ApplicationDbContext context, ILogger<CompanyController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetCompanies()
         {
-            return await _context.Companies
+            _logger.LogInformation("[COMPANY][GET] Tüm firmalar listeleniyor.");
+            var result = await _context.Companies
                 .Include(c => c.Urls)
                 .Include(c => c.Tokens)
                 .Select(c => new {
@@ -44,11 +48,14 @@ namespace UrlShortener.API.Controllers
                     })
                 })
                 .ToListAsync();
+            _logger.LogInformation("[COMPANY][GET] {Count} firma listelendi.", result.Count);
+            return result;
         }
 
         [HttpPost]
         public async Task<ActionResult<object>> CreateCompany([FromBody] CreateCompanyDto dto)
         {
+            _logger.LogInformation("[COMPANY][CREATE] Yeni firma oluşturuluyor: {CompanyName}, Token adedi: {TokenCount}", dto.CompanyName, dto.TokenCount);
             var company = new Company
             {
                 Name = dto.CompanyName,
@@ -74,32 +81,35 @@ namespace UrlShortener.API.Controllers
             }
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation("[COMPANY][CREATE] Firma ve tokenlar başarıyla oluşturuldu. ID: {CompanyId}", company.Id);
 
-            // Yanıt olarak daha basit bir DTO dönelim (döngüyü önlemek için)
             var resultDto = new 
             {
                 Id = company.Id,
                 Name = company.Name,
                 CreatedAt = company.CreatedAt.ToUniversalTime().ToString("o")
-                // Token'ları veya URL'leri burada dönmeye gerek yok
             };
 
-            return CreatedAtAction(nameof(GetCompany), new { id = company.Id }, resultDto); // company yerine resultDto döndürülüyor
+            return CreatedAtAction(nameof(GetCompany), new { id = company.Id }, resultDto);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetCompany(int id)
         {
+            _logger.LogInformation("[COMPANY][DETAIL] Firma detayları isteniyor. ID: {CompanyId}", id);
             var company = await _context.Companies
                 .Include(c => c.Urls)
+                    .ThenInclude(u => u.Clicks)
                 .Include(c => c.Tokens)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (company == null)
             {
+                _logger.LogWarning("[COMPANY][DETAIL][NOTFOUND] Firma bulunamadı. ID: {CompanyId}", id);
                 return NotFound();
             }
 
+            _logger.LogInformation("[COMPANY][DETAIL] Firma detayları getirildi. ID: {CompanyId}", id);
             return new {
                 Id = company.Id,
                 Name = company.Name,
@@ -117,24 +127,34 @@ namespace UrlShortener.API.Controllers
                     u.ShortUrl,
                     u.CreatedAt,
                     u.ExpiresAt,
-                    clickCount = u.ClickCount
+                    clickCount = u.ClickCount,
+                    clicks = u.Clicks.Select(c => new {
+                        c.Id,
+                        c.IpAddress,
+                        c.UserAgent,
+                        c.ClickedAt,
+                        c.Latitude,
+                        c.Longitude
+                    })
                 })
             };
         }
 
-        // YENİ: Token kullanım hakkını güncelleme endpoint'i
         [HttpPut("token/{tokenId}/uses")]
         public async Task<IActionResult> UpdateTokenUses(int tokenId, [FromBody] UpdateTokenUsesDto dto)
         {
+            _logger.LogInformation("[TOKEN][UPDATE] Token kullanım hakkı güncelleniyor. TokenID: {TokenId}, Yeni hak: {RemainingUses}", tokenId, dto.RemainingUses);
             var token = await _context.Tokens.FindAsync(tokenId);
 
             if (token == null)
             {
+                _logger.LogWarning("[TOKEN][UPDATE][NOTFOUND] Token bulunamadı. TokenID: {TokenId}", tokenId);
                 return NotFound("Token bulunamadı.");
             }
 
             if (dto.RemainingUses < 0)
             {
+                _logger.LogWarning("[TOKEN][UPDATE][INVALID] Negatif kullanım hakkı girildi. TokenID: {TokenId}", tokenId);
                 return BadRequest("Kalan kullanım hakkı negatif olamaz.");
             }
 
@@ -144,47 +164,60 @@ namespace UrlShortener.API.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("[TOKEN][UPDATE][SUCCESS] Token güncellendi. TokenID: {TokenId}", tokenId);
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!_context.Tokens.Any(e => e.Id == tokenId))
                 {
+                    _logger.LogWarning("[TOKEN][UPDATE][CONCURRENCY] Token bulunamadı (eş zamanlılık). TokenID: {TokenId}", tokenId);
                     return NotFound("Token bulunamadı (eş zamanlılık).");
                 }
                 else
                 {
+                    _logger.LogError("[TOKEN][UPDATE][ERROR] Eş zamanlılık hatası. TokenID: {TokenId}");
                     throw;
                 }
             }
 
-            return NoContent(); // Başarılı güncellemede içerik dönmeye gerek yok
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCompany(int id)
         {
+            _logger.LogWarning("[COMPANY][DELETE] Firma siliniyor. ID: {CompanyId}", id);
             var company = await _context.Companies
                 .Include(c => c.Tokens)
                 .Include(c => c.Urls)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (company == null)
+            {
+                _logger.LogWarning("[COMPANY][DELETE][NOTFOUND] Silinmek istenen firma bulunamadı. ID: {CompanyId}", id);
                 return NotFound();
+            }
 
             _context.Companies.Remove(company);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("[COMPANY][DELETE][SUCCESS] Firma silindi. ID: {CompanyId}", id);
             return NoContent();
         }
 
         [HttpDelete("token/{tokenId}")]
         public async Task<IActionResult> DeleteToken(int tokenId)
         {
+            _logger.LogWarning("[TOKEN][DELETE] Token siliniyor. TokenID: {TokenId}", tokenId);
             var token = await _context.Tokens.FindAsync(tokenId);
             if (token == null)
+            {
+                _logger.LogWarning("[TOKEN][DELETE][NOTFOUND] Silinmek istenen token bulunamadı. TokenID: {TokenId}", tokenId);
                 return NotFound();
+            }
 
             _context.Tokens.Remove(token);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("[TOKEN][DELETE][SUCCESS] Token silindi. TokenID: {TokenId}", tokenId);
             return NoContent();
         }
 

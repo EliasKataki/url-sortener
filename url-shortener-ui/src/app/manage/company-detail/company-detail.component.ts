@@ -5,6 +5,7 @@ import { Company, CompanyService, Token, Url } from '../../services/company.serv
 import { UrlService } from '../../services/url.service'; // UrlService eklendi
 import { Observable, switchMap, catchError, of } from 'rxjs'; // catchError ve of eklendi
 import { FormsModule } from '@angular/forms'; // FormsModule eklendi
+import * as L from 'leaflet';
 
 @Component({
   selector: 'app-company-detail',
@@ -14,7 +15,7 @@ import { FormsModule } from '@angular/forms'; // FormsModule eklendi
   styleUrls: ['./company-detail.component.scss']
 })
 export class CompanyDetailComponent implements OnInit {
-  company$: Observable<Company | null> | undefined;
+  company$: Observable<Company | null> = of(null);
   errorMessage: string = '';
   // Token güncelleme için ek özellikler
   updatingTokenId: number | null = null;
@@ -30,6 +31,11 @@ export class CompanyDetailComponent implements OnInit {
 
   todayString: string = new Date().toISOString().split('T')[0];
 
+  private map: L.Map | null = null;
+  private markersLayer: L.LayerGroup | null = null;
+
+  selectedUrlId: number | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private companyService: CompanyService,
@@ -37,38 +43,138 @@ export class CompanyDetailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    console.log('[INIT] CompanyDetailComponent başlatıldı');
     this.company$ = this.route.paramMap.pipe(
       switchMap(params => {
         const id = params.get('id');
         if (id) {
           this.errorMessage = '';
-          // Hata yakalama eklendi
+          console.log(`[API] Firma detayları isteniyor. ID: ${id}`);
           return this.companyService.getCompanyDetails(+id).pipe(
              catchError(err => {
-                console.error('Firma detayları alınırken hata:', err);
+                console.error(`[HATA][API] Firma detayları alınamadı. ID: ${id}`, err);
                 this.errorMessage = 'Firma detayları alınamadı.';
-                return of(null); // Hata durumunda null observable dön
+                return of(null);
              })
           ); 
         } else {
           this.errorMessage = 'Firma ID bulunamadı.';
-          return of(null); // Hata durumunda null observable dön
+          console.warn('[UYARI] Firma ID bulunamadı.');
+          return of(null);
         }
       })
     );
-    // Tokenlar için sayfalama
+
     this.company$.subscribe(company => {
       if (company && company.tokens) {
         this.allTokens = company.tokens;
         this.totalPages = Math.ceil(this.allTokens.length / this.pageSize);
         this.setPage(1);
+        console.log(`[TOKEN] Toplam token: ${company.tokens.length}`);
       } else {
         this.allTokens = [];
         this.pagedTokens = [];
         this.totalPages = 1;
         this.currentPage = 1;
+        console.log('[TOKEN] Token bulunamadı veya firma yok.');
       }
+      setTimeout(() => this.initOrUpdateMap(company), 0);
     });
+  }
+
+  public initOrUpdateMap(company: Company | null) {
+    console.log('initOrUpdateMap çağrıldı', { company, selectedUrlId: this.selectedUrlId });
+    
+    if (typeof window === 'undefined') {
+      console.log('window undefined, harita başlatılamıyor');
+      return;
+    }
+    
+    const mapElement = document.getElementById('map');
+    console.log('Map elementi:', mapElement);
+    
+    if (!mapElement) {
+      console.log('Map elementi bulunamadı');
+      if (this.map) {
+        console.log('Eski harita temizleniyor');
+        this.map.remove();
+        this.map = null;
+      }
+      return;
+    }
+    
+    if (!company) {
+      console.log('Company null, harita başlatılamıyor');
+      return;
+    }
+
+    // Eski harita varsa temizle
+    if (this.map) {
+      console.log('Eski harita temizleniyor');
+      this.map.remove();
+      this.map = null;
+    }
+
+    console.log('Yeni harita başlatılıyor');
+    this.map = L.map('map').setView([39.0, 35.0], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(this.map);
+    this.markersLayer = L.layerGroup().addTo(this.map);
+
+    // Markerları güncelle
+    if (this.markersLayer) {
+      console.log('Markerlar temizleniyor');
+      this.markersLayer.clearLayers();
+    }
+    
+    const allClicks: any[] = [];
+    if (company.urls) {
+      let urlsToShow = company.urls;
+      if (this.selectedUrlId) {
+        console.log('Seçili URL için markerlar ekleniyor:', this.selectedUrlId);
+        urlsToShow = company.urls.filter(u => u.id === this.selectedUrlId);
+      } else {
+        console.log('Tüm URL\'ler için markerlar ekleniyor');
+      }
+      
+      for (const url of urlsToShow) {
+        if (url.clicks) {
+          for (const click of url.clicks) {
+            if (
+              click.latitude !== null &&
+              click.latitude !== undefined &&
+              click.longitude !== null &&
+              click.longitude !== undefined
+            ) {
+              allClicks.push({
+                lat: Number(click.latitude),
+                lng: Number(click.longitude),
+                url: url.shortUrl,
+                time: click.clickedAt
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    console.log('Toplam tıklama sayısı:', allClicks.length);
+    
+    allClicks.forEach(click => {
+      const marker = L.marker([click.lat, click.lng], { icon: redIcon });
+      marker.bindPopup(`URL: ${click.url}<br>Tarih: ${click.time}`);
+      this.markersLayer?.addLayer(marker);
+    });
+    
+    if (allClicks.length > 0 && this.map) {
+      console.log('Harita sınırları ayarlanıyor');
+      const group = new L.LatLngBounds(allClicks.map(c => [c.lat, c.lng]));
+      this.map.fitBounds(group, { padding: [30, 30] });
+    } else if (this.map) {
+      console.log('Varsayılan harita görünümü ayarlanıyor');
+      this.map.setView([39.0, 35.0], 5); // Türkiye ortası
+    }
   }
 
   setPage(page: number) {
@@ -82,12 +188,10 @@ export class CompanyDetailComponent implements OnInit {
   updateTokenUses(token: Token): void {
     if (token.remainingUses < 0) {
         this.updateTokenError = `Token #${token.id} için kalan hak negatif olamaz.`;
-        // Optionally revert the value in the input?
-        // this.refreshCompanyDetails(); // Revert the whole data if needed
+        console.warn(`[TOKEN][UYARI] Token #${token.id} için kalan hak negatif!`);
         return;
     }
-
-    console.log('Güncellenecek Token:', token.id, 'Yeni Kalan Hak:', token.remainingUses);
+    console.log(`[TOKEN] Token #${token.id} kalan hak güncelleniyor: ${token.remainingUses}`);
     this.updatingTokenId = token.id;
     this.updateTokenError = '';
     this.updateTokenSuccess = '';
@@ -95,22 +199,18 @@ export class CompanyDetailComponent implements OnInit {
     this.companyService.updateTokenUses(token.id, token.remainingUses).subscribe({
       next: () => {
           this.updateTokenSuccess = `Token #${token.id} kalan hakkı başarıyla güncellendi.`;
-          console.log('Token güncellendi');
+          console.log(`[TOKEN][BAŞARILI] Token #${token.id} güncellendi.`);
           this.updatingTokenId = null;
-          // Başarı mesajını bir süre sonra temizle
           setTimeout(() => { this.updateTokenSuccess = ''; }, 3000);
-          // Başarılı güncelleme sonrası listeyi yenilemeye gerek yok gibi, çünkü [(ngModel)] zaten güncel.
       },
       error: (error: any) => {
           this.updateTokenError = `Token #${token.id} güncellenirken hata oluştu.`;
-          if (error?.error) { // API'den gelen hatayı göster
+          if (error?.error) {
             this.updateTokenError += ` Detay: ${ typeof error.error === 'string' ? error.error : JSON.stringify(error.error) }`;
           }
-          console.error('Token güncellenemedi', error);
+          console.error(`[TOKEN][HATA] Token #${token.id} güncellenemedi`, error);
           this.updatingTokenId = null;
-          // Hata durumunda eski değeri geri yüklemek için listeyi yenileyebiliriz
           this.refreshCompanyDetails(); 
-          // Hata mesajını bir süre sonra temizle
           setTimeout(() => { this.updateTokenError = ''; }, 5000);
       }
     });
@@ -127,19 +227,19 @@ export class CompanyDetailComponent implements OnInit {
     this.shorteningResult = '';
     if (!this.newLongUrl || !this.selectedTokenValue) {
       this.shorteningError = 'Lutfen kisaltilacak URL\'yi ve kullanilacak token\'i secin.';
+      console.warn('[URL KISALTMA][UYARI] URL veya token seçilmedi.');
       return;
     }
-
+    console.log(`[URL KISALTMA] Kullanıcı yeni URL kısaltıyor: ${this.newLongUrl}, Token: ${this.selectedTokenValue}`);
     this.urlService.shortenUrl(this.newLongUrl, this.selectedTokenValue).subscribe({
       next: (response: any) => {
-        this.shorteningResult = response.shortUrl; // API yanıtından shortUrl alınıyor
-        this.newLongUrl = ''; // Formu temizle
-        // Başarı mesajı zaten HTML'de gösteriliyor.
-        // Firma bilgisini yenilemek gerekebilir (token hakkı düştü)
+        this.shorteningResult = response.shortUrl;
+        this.newLongUrl = '';
+        console.log(`[URL KISALTMA][BAŞARILI] Kısa URL oluşturuldu: ${this.shorteningResult}`);
         this.refreshCompanyDetails(); 
       },
       error: (error: any) => {
-        console.error('Firma adına URL kısaltılırken hata:', error);
+        console.error('[URL KISALTMA][HATA] Firma adına URL kısaltılırken hata:', error);
         this.shorteningError = 'URL kisaltilirken bir hata olustu.';
          if (error?.error) {
           this.shorteningError += ` Detay: ${ typeof error.error === 'string' ? error.error : JSON.stringify(error.error) }`;
@@ -153,9 +253,9 @@ export class CompanyDetailComponent implements OnInit {
     if (urlToCopy) {
       navigator.clipboard.writeText(urlToCopy)
         .then(() => { 
-          console.log('Link kopyalandı:', urlToCopy);
+          console.log('[KOPYALA] Link kopyalandı:', urlToCopy);
          })
-        .catch(err => console.error('Kopyalanamadı:', err));
+        .catch(err => console.error('[KOPYALA][HATA] Kopyalanamadı:', err));
     }
   }
 
@@ -195,6 +295,7 @@ export class CompanyDetailComponent implements OnInit {
   }
 
   deleteCompany(companyId: number) {
+    console.warn(`[FİRMA][SİLME] Firma siliniyor. ID: ${companyId}`);
     this.openModal(
       'Firma Sil',
       'Bu firmayı ve tüm ilişkili verileri (tokenlar, url, tıklama vs.) silmek istediğinize emin misiniz?',
@@ -202,10 +303,11 @@ export class CompanyDetailComponent implements OnInit {
         if (!result) return;
         this.companyService.deleteCompany(companyId).subscribe({
           next: () => {
+            console.log(`[FİRMA][SİLME][BAŞARILI] Firma silindi. ID: ${companyId}`);
             window.location.href = '/manage/companies';
           },
           error: () => {
-            alert('Firma silinirken hata oluştu!');
+            console.error('[FİRMA][SİLME][HATA] Firma silinirken hata oluştu!');
           }
         });
       }
@@ -213,6 +315,7 @@ export class CompanyDetailComponent implements OnInit {
   }
 
   deleteToken(tokenId: number) {
+    console.warn(`[TOKEN][SİLME] Token siliniyor. ID: ${tokenId}`);
     this.openModal(
       'Token Sil',
       'Bu tokenı silmek istediğinize emin misiniz?',
@@ -220,10 +323,11 @@ export class CompanyDetailComponent implements OnInit {
         if (!result) return;
         this.companyService.deleteToken(tokenId).subscribe({
           next: () => {
+            console.log(`[TOKEN][SİLME][BAŞARILI] Token silindi. ID: ${tokenId}`);
             this.refreshCompanyDetails();
           },
           error: () => {
-            alert('Token silinirken hata oluştu!');
+            console.error('[TOKEN][SİLME][HATA] Token silinirken hata oluştu!');
           }
         });
       }
@@ -231,6 +335,7 @@ export class CompanyDetailComponent implements OnInit {
   }
 
   deleteUrl(urlId: number) {
+    console.warn(`[URL][SİLME] URL siliniyor. ID: ${urlId}`);
     this.openModal(
       'URL Sil',
       'Bu URL kaydını silmek istediğinize emin misiniz?',
@@ -238,10 +343,11 @@ export class CompanyDetailComponent implements OnInit {
         if (!result) return;
         this.companyService.deleteUrl(urlId).subscribe({
           next: () => {
+            console.log(`[URL][SİLME][BAŞARILI] URL silindi. ID: ${urlId}`);
             this.refreshCompanyDetails();
           },
           error: () => {
-            alert('URL silinirken hata oluştu!');
+            console.error('[URL][SİLME][HATA] URL silinirken hata oluştu!');
           }
         });
       }
@@ -303,9 +409,51 @@ export class CompanyDetailComponent implements OnInit {
 
   handleClick(url: Url, event: Event) {
     event.preventDefault();
-    window.open(this.getFullShortUrl(url.shortUrl), '_blank');
-    setTimeout(() => {
-      this.refreshCompanyDetails();
-    }, 1000); // 1 saniye sonra veriyi tekrar çek
+    console.log(`[HARİTA][TIKLAMA] Kullanıcı harita markerı için tıkladı. URL: ${url.shortUrl}`);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const redirectUrl = this.getFullShortUrl(url.shortUrl) + `?latitude=${lat}&longitude=${lng}`;
+          window.open(redirectUrl, '_blank');
+          setTimeout(() => {
+            this.refreshCompanyDetails();
+          }, 2000);
+        },
+        (error) => {
+          console.warn('[HARİTA][TIKLAMA][UYARI] Konum alınamadı, klasik yönlendirme yapılıyor.');
+          window.open(this.getFullShortUrl(url.shortUrl), '_blank');
+          setTimeout(() => {
+            this.refreshCompanyDetails();
+          }, 2000);
+        }
+      );
+    } else {
+      console.warn('[HARİTA][TIKLAMA][UYARI] Geolocation desteklenmiyor, klasik yönlendirme yapılıyor.');
+      window.open(this.getFullShortUrl(url.shortUrl), '_blank');
+      setTimeout(() => {
+        this.refreshCompanyDetails();
+      }, 2000);
+    }
   }
-} 
+
+  toggleUrlSelection(urlId: number, company: Company) {
+    if (this.selectedUrlId === urlId) {
+      this.selectedUrlId = null;
+    } else {
+      this.selectedUrlId = urlId;
+    }
+    setTimeout(() => this.initOrUpdateMap(company), 0);
+  }
+}
+
+// Kırmızı marker ikonu tanımı
+const redIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+}); 

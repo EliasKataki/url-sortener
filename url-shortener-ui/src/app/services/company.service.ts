@@ -11,6 +11,17 @@ export interface Token {
   expiresAt?: string | null; // veya Date
 }
 
+export interface UrlClick {
+  id: number;
+  ipAddress: string;
+  userAgent: string;
+  country: string;
+  city: string;
+  clickedAt: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface Url {
   id: number;
   longUrl: string;
@@ -18,6 +29,7 @@ export interface Url {
   clickCount: number;
   createdAt: string; // veya Date
   expiresAt?: string | null; // eklendi
+  clicks?: UrlClick[];
 }
 
 export interface Company {

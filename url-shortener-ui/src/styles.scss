@@ -1,5 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 @use "bootstrap/scss/bootstrap" as *;
+@import 'leaflet/dist/leaflet.css';
 
 // Octapull benzeri renk paleti (turuncu/gri/beyaz)
 :root {

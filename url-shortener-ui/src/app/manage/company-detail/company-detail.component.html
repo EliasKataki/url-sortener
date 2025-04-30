@@ -83,8 +83,11 @@
               <h4 class="card-title">URL'ler ({{ company.urls?.length || 0 }})</h4>
               <ul class="list-group list-group-flush mb-3" *ngIf="company.urls && company.urls.length > 0; else noUrls">
                 <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let url of company.urls">
-                  <span>
-                    <a [href]="getFullShortUrl(url.shortUrl)" target="_blank" (click)="handleClick(url, $event)">{{ getFullShortUrl(url.shortUrl) }}</a>
+                  <span class="d-flex align-items-center">
+                    <input type="radio" name="selectedUrl" [value]="url.id"
+                      [checked]="selectedUrlId === url.id"
+                      (click)="toggleUrlSelection(url.id, company)">
+                    <a [href]="getFullShortUrl(url.shortUrl)" target="_blank" (click)="handleClick(url, $event)" class="ms-2">{{ getFullShortUrl(url.shortUrl) }}</a>
                     <span class="text-muted ms-2">({{ url.shortUrl }})</span> (Tıklanma: {{ url.clickCount }})
                   </span>
                   <div class="d-flex align-items-center gap-2">
@@ -100,6 +103,10 @@
           </div>
         </div>
       </div>
+
+      <hr>
+      <h4>Tıklama Konumları Haritası</h4>
+      <div id="map" *ngIf="selectedUrlId !== null" style="height: 400px; width: 100%; margin-bottom: 2rem;"></div>
 
       <hr>
       <h4>Bu Firma İçin URL Kısalt</h4>

@@ -12,9 +12,8 @@ namespace UrlShortener.API.Models
 
         public string IpAddress { get; set; } = string.Empty;
         public string UserAgent { get; set; } = string.Empty;
-        public string Country { get; set; } = string.Empty;
-        public string City { get; set; } = string.Empty;
-
         public DateTime ClickedAt { get; set; } = DateTime.UtcNow;
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 } 
