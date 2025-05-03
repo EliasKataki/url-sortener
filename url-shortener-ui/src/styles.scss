@@ -67,15 +67,41 @@ footer .container {
   font-weight: 500;
 }
 
-.btn-primary {
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
-}
-
-.btn-primary:hover, .btn-primary:focus {
-  background-color: #bdbdbd !important; /* Siteyle uyumlu gri */
-  border-color: #bdbdbd !important;
+.btn-primary, .btn-primary:focus, .btn-primary:active, .btn-primary:visited {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
   color: #fff !important;
+}
+.btn-primary:hover {
+  background-color: #e96b00 !important;
+  border-color: #e96b00 !important;
+  color: #fff !important;
+}
+.btn-outline-primary, .btn-outline-primary:focus, .btn-outline-primary:active, .btn-outline-primary:visited {
+  color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  background: #fff !important;
+}
+.btn-outline-primary:hover {
+  background-color: var(--bs-primary) !important;
+  color: #fff !important;
+  border-color: var(--bs-primary) !important;
+}
+.page-link, .page-link:focus, .page-link:active {
+  color: var(--bs-primary) !important;
+}
+.page-link:hover {
+  color: #fff !important;
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
+.spinner-border.text-primary {
+  color: var(--bs-primary) !important;
+}
+.alert-primary {
+  background-color: rgba(253, 126, 20, 0.15) !important;
+  border-color: var(--bs-primary) !important;
+  color: var(--bs-primary) !important;
 }
 
 /* Tablo stilleri */

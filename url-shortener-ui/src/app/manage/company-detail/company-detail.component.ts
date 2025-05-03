@@ -36,6 +36,9 @@ export class CompanyDetailComponent implements OnInit {
 
   selectedUrlId: number | null = null;
 
+  konumUyari: string = '';
+  manuelKonum: {lat: number, lng: number} | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private companyService: CompanyService,
@@ -151,7 +154,8 @@ export class CompanyDetailComponent implements OnInit {
                 lat: Number(click.latitude),
                 lng: Number(click.longitude),
                 url: url.shortUrl,
-                time: click.clickedAt
+                time: click.clickedAt,
+                markerType: click.markerType
               });
             }
           }
@@ -162,8 +166,12 @@ export class CompanyDetailComponent implements OnInit {
     console.log('Toplam tıklama sayısı:', allClicks.length);
     
     allClicks.forEach(click => {
-      const marker = L.marker([click.lat, click.lng], { icon: redIcon });
-      marker.bindPopup(`URL: ${click.url}<br>Tarih: ${click.time}`);
+      let icon = redIcon;
+      if (click.markerType === 'ip') {
+        icon = greyIcon;
+      }
+      const marker = L.marker([click.lat, click.lng], { icon });
+      marker.bindPopup(`URL: ${click.url}<br>Tarih: ${click.time}<br>Tip: ${click.markerType === 'ip' ? 'Yaklaşık (IP)' : 'Hassas (GPS)'}`);
       this.markersLayer?.addLayer(marker);
     });
     
@@ -174,6 +182,16 @@ export class CompanyDetailComponent implements OnInit {
     } else if (this.map) {
       console.log('Varsayılan harita görünümü ayarlanıyor');
       this.map.setView([39.0, 35.0], 5); // Türkiye ortası
+    }
+
+    if (this.map) {
+      this.map.on('click', (e: any) => {
+        if (confirm('Bu noktayı manuel konum olarak kaydetmek istiyor musunuz?')) {
+          this.manuelKonum = {lat: e.latlng.lat, lng: e.latlng.lng};
+          this.konumUyari = 'Manuel olarak seçilen konum kaydedilecek.';
+          // Burada backend'e manuel konum kaydı için yönlendirme yapılabilir veya özel bir endpoint ile kaydedilebilir.
+        }
+      });
     }
   }
 
@@ -218,6 +236,7 @@ export class CompanyDetailComponent implements OnInit {
 
   // Firma için URL kısaltma alanı için özellikler
   newLongUrl: string = '';
+  newExpiresAt: string = '';
   selectedTokenValue: string | null = null;
   shorteningResult: string = '';
   shorteningError: string = '';
@@ -225,16 +244,17 @@ export class CompanyDetailComponent implements OnInit {
   shortenUrlForCompany(): void {
     this.shorteningError = '';
     this.shorteningResult = '';
-    if (!this.newLongUrl || !this.selectedTokenValue) {
-      this.shorteningError = 'Lutfen kisaltilacak URL\'yi ve kullanilacak token\'i secin.';
-      console.warn('[URL KISALTMA][UYARI] URL veya token seçilmedi.');
+    if (!this.newLongUrl || !this.selectedTokenValue || !this.newExpiresAt) {
+      this.shorteningError = 'Lütfen kısaltılacak URL\'yi, son kullanma tarihini ve kullanılacak token\'i seçin.';
+      console.warn('[URL KISALTMA][UYARI] URL, son kullanma tarihi veya token seçilmedi.');
       return;
     }
-    console.log(`[URL KISALTMA] Kullanıcı yeni URL kısaltıyor: ${this.newLongUrl}, Token: ${this.selectedTokenValue}`);
-    this.urlService.shortenUrl(this.newLongUrl, this.selectedTokenValue).subscribe({
+    console.log(`[URL KISALTMA] Kullanıcı yeni URL kısaltıyor: ${this.newLongUrl}, Token: ${this.selectedTokenValue}, Son Kullanma: ${this.newExpiresAt}`);
+    this.urlService.shortenUrl(this.newLongUrl, this.selectedTokenValue, this.newExpiresAt).subscribe({
       next: (response: any) => {
         this.shorteningResult = response.shortUrl;
         this.newLongUrl = '';
+        this.newExpiresAt = '';
         console.log(`[URL KISALTMA][BAŞARILI] Kısa URL oluşturuldu: ${this.shorteningResult}`);
         this.refreshCompanyDetails(); 
       },
@@ -409,33 +429,63 @@ export class CompanyDetailComponent implements OnInit {
 
   handleClick(url: Url, event: Event) {
     event.preventDefault();
-    console.log(`[HARİTA][TIKLAMA] Kullanıcı harita markerı için tıkladı. URL: ${url.shortUrl}`);
+    this.konumUyari = '';
+    this.manuelKonum = null;
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 0
+    };
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          const redirectUrl = this.getFullShortUrl(url.shortUrl) + `?latitude=${lat}&longitude=${lng}`;
-          window.open(redirectUrl, '_blank');
-          setTimeout(() => {
-            this.refreshCompanyDetails();
-          }, 2000);
+          const accuracy = position.coords.accuracy;
+          let markerType = 'gps';
+          if (accuracy > 50) {
+            this.konumUyari = `Konumunuzun hassasiyeti düşük (${Math.round(accuracy)} m). Yaklaşık konum alınacak.`;
+            this.getIpBasedLocation(url);
+            return;
+          }
+          this.konumUyari = `Konumunuzun hassasiyeti: ${Math.round(accuracy)} metre. (Hassas/GPS)`;
+          this.redirectWithLocation(url, lat, lng, markerType);
         },
         (error) => {
-          console.warn('[HARİTA][TIKLAMA][UYARI] Konum alınamadı, klasik yönlendirme yapılıyor.');
-          window.open(this.getFullShortUrl(url.shortUrl), '_blank');
-          setTimeout(() => {
-            this.refreshCompanyDetails();
-          }, 2000);
-        }
+          this.konumUyari = 'Konum alınamadı, yaklaşık konum alınacak.';
+          this.getIpBasedLocation(url);
+        },
+        options
       );
     } else {
-      console.warn('[HARİTA][TIKLAMA][UYARI] Geolocation desteklenmiyor, klasik yönlendirme yapılıyor.');
-      window.open(this.getFullShortUrl(url.shortUrl), '_blank');
-      setTimeout(() => {
-        this.refreshCompanyDetails();
-      }, 2000);
+      this.konumUyari = 'Tarayıcı konum desteği yok, yaklaşık konum alınacak.';
+      this.getIpBasedLocation(url);
     }
+  }
+
+  private getIpBasedLocation(url: Url) {
+    // ipgeolocation.io örnek API anahtarı ile (kendi anahtarınızı kullanın)
+    fetch('https://api.ipgeolocation.io/ipgeo?apiKey=demo')
+      .then(response => response.json())
+      .then(data => {
+        const lat = parseFloat(data.latitude);
+        const lng = parseFloat(data.longitude);
+        const markerType = 'ip';
+        this.konumUyari = 'Yaklaşık konum tespit edildi (IP tabanlı). Haritada sapma olabilir.';
+        this.redirectWithLocation(url, lat, lng, markerType);
+      })
+      .catch(error => {
+        this.konumUyari = 'Konum alınamadı. Lütfen tekrar deneyin.';
+        alert('Konum alınamadı. Lütfen tekrar deneyin.');
+      });
+  }
+
+  private redirectWithLocation(url: Url, lat: number, lng: number, markerType: string) {
+    const redirectUrl = this.getFullShortUrl(url.shortUrl) + `?latitude=${lat}&longitude=${lng}&markerType=${markerType}`;
+    window.open(redirectUrl, '_blank');
+    setTimeout(() => {
+      this.refreshCompanyDetails();
+    }, 2000);
   }
 
   toggleUrlSelection(urlId: number, company: Company) {
@@ -451,6 +501,16 @@ export class CompanyDetailComponent implements OnInit {
 // Kırmızı marker ikonu tanımı
 const redIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Gri marker ikonu tanımı (IP tabanlı için)
+const greyIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_grey.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],

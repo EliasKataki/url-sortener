@@ -20,6 +20,7 @@ export interface UrlClick {
   clickedAt: string;
   latitude?: number;
   longitude?: number;
+  markerType?: string; // GPS veya IP
 }
 
 export interface Url {

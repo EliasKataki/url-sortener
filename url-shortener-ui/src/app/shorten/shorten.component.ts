@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common'; // Gerekli importlar
 import { FormsModule } from '@angular/forms'; // FormsModule form için gerekli
 import { UrlService } from '../services/url.service'; // Servisi import edelim
+import { CompanyService, Company, Token } from '../services/company.service';
 
 @Component({
   selector: 'app-shorten',
@@ -13,21 +14,56 @@ import { UrlService } from '../services/url.service'; // Servisi import edelim
 export class ShortenComponent {
   longUrl: string = '';
   shortUrl: string = '';
+  expiresAt: string = '';
+  todayString: string = new Date().toISOString().split('T')[0];
   stats: any = null;
   error: string = '';
 
-  constructor(private urlService: UrlService) {}
+  companies: Company[] = [];
+  selectedCompanyId: number | null = null;
+  tokens: Token[] = [];
+  selectedTokenValue: string | null = null;
+
+  constructor(private urlService: UrlService, private companyService: CompanyService) {
+    this.loadCompanies();
+  }
+
+  loadCompanies() {
+    this.companyService.getCompanies().subscribe({
+      next: (companies) => {
+        this.companies = companies;
+      },
+      error: (err) => {
+        this.error = 'Firma listesi alınamadı.';
+      }
+    });
+  }
+
+  onCompanyChange() {
+    const company = this.companies.find(c => c.id == this.selectedCompanyId);
+    this.tokens = company?.tokens || [];
+    this.selectedTokenValue = null;
+  }
 
   shortenUrl() {
-    this.urlService.shortenUrl(this.longUrl, null).subscribe({
+    if (!this.longUrl || !this.expiresAt || !this.selectedCompanyId || !this.selectedTokenValue) {
+      this.error = 'Lütfen tüm alanları doldurun (URL, firma, token, tarih).';
+      return;
+    }
+    this.urlService.shortenUrl(this.longUrl, this.selectedTokenValue, this.expiresAt).subscribe({
       next: (response: any) => {
         this.shortUrl = response.shortUrl;
         this.error = '';
+        this.longUrl = '';
+        this.expiresAt = '';
+        this.selectedCompanyId = null;
+        this.selectedTokenValue = null;
+        this.tokens = [];
       },
       error: (error: any) => {
         this.error = 'URL kısaltma işlemi başarısız oldu.';
-        this.shortUrl = ''; // Hata durumunda kısa URL'yi temizle
-        this.stats = null; // Hata durumunda istatistikleri temizle
+        this.shortUrl = '';
+        this.stats = null;
         console.error(error);
       }
     });

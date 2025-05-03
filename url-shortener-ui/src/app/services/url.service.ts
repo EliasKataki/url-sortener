@@ -10,8 +10,8 @@ export class UrlService {
 
   constructor(private http: HttpClient) { }
 
-  shortenUrl(longUrl: string, token: string | null): Observable<any> {
-    const dto = { longUrl: longUrl, token: token ?? "" };
+  shortenUrl(longUrl: string, token: string | null, expiresAt: string): Observable<any> {
+    const dto = { longUrl: longUrl, token: token ?? "", expiresAt: expiresAt };
     return this.http.post(this.apiUrl, dto);
   }
 

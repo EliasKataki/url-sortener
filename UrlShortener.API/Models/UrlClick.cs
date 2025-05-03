@@ -15,5 +15,6 @@ namespace UrlShortener.API.Models
         public DateTime ClickedAt { get; set; } = DateTime.UtcNow;
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public string? MarkerType { get; set; } // 'gps' veya 'ip'
     }
 } 

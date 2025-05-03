@@ -35,6 +35,12 @@ namespace UrlShortener.API.Controllers
                 return BadRequest("Geçersiz URL formatı");
             }
 
+            if (!dto.ExpiresAt.HasValue)
+            {
+                LogHelper.LogWarning(_logger, LogCategory.URL, "CREATE", "Bitiş tarihi (expiresAt) zorunlu ama eksik gönderildi.");
+                return BadRequest("Bitiş tarihi (expiresAt) zorunludur.");
+            }
+
             int? companyId = null;
             Token? foundToken = null;
 
@@ -59,7 +65,8 @@ namespace UrlShortener.API.Controllers
                 LongUrl = dto.LongUrl,
                 ShortUrl = shortUrl,
                 CompanyId = companyId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = dto.ExpiresAt
             };
 
             if (foundToken != null)
@@ -78,7 +85,7 @@ namespace UrlShortener.API.Controllers
         }
 
         [HttpGet("{shortUrl}")]
-        public async Task<ActionResult> RedirectToLongUrl(string shortUrl, [FromQuery] double? latitude = null, [FromQuery] double? longitude = null)
+        public async Task<ActionResult> RedirectToLongUrl(string shortUrl, [FromQuery] double? latitude = null, [FromQuery] double? longitude = null, [FromQuery] string? markerType = null)
         {
             LogHelper.LogUrlOperation(_logger, "REDIRECT", "URL yönlendirme isteği alındı", shortUrl);
 
@@ -90,7 +97,7 @@ namespace UrlShortener.API.Controllers
                 return NotFound();
             }
 
-            if (url.ExpiresAt.HasValue && url.ExpiresAt.Value.Date < DateTime.UtcNow.Date)
+            if (url.ExpiresAt.HasValue && url.ExpiresAt.Value.ToUniversalTime() < DateTime.UtcNow)
             {
                 LogHelper.LogWarning(_logger, LogCategory.URL, "REDIRECT", $"Süresi dolmuş URL: {shortUrl}");
                 return StatusCode(410, "Bu kısa linkin süresi doldu.");
@@ -114,7 +121,8 @@ namespace UrlShortener.API.Controllers
                 UserAgent = HttpContext.Request.Headers.UserAgent.ToString(),
                 Latitude = latitude,
                 Longitude = longitude,
-                ClickedAt = DateTime.UtcNow
+                ClickedAt = DateTime.UtcNow,
+                MarkerType = markerType
             };
 
             _context.UrlClicks.Add(click);
@@ -154,7 +162,8 @@ namespace UrlShortener.API.Controllers
                     c.UserAgent,
                     c.ClickedAt,
                     c.Latitude,
-                    c.Longitude
+                    c.Longitude,
+                    c.MarkerType
                 })
             };
         }
@@ -216,6 +225,7 @@ namespace UrlShortener.API.Controllers
     {
         public string LongUrl { get; set; } = string.Empty;
         public string Token { get; set; } = string.Empty;
+        public DateTime? ExpiresAt { get; set; }
     }
 
     public class UpdateUrlExpiresAtDto

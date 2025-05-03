@@ -134,7 +134,8 @@ namespace UrlShortener.API.Controllers
                         c.UserAgent,
                         c.ClickedAt,
                         c.Latitude,
-                        c.Longitude
+                        c.Longitude,
+                        c.MarkerType
                     })
                 })
             };
