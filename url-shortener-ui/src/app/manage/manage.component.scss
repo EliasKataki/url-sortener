@@ -1,0 +1,31 @@
+/* ManageComponent için stiller buraya eklenebilir */
+
+/* Yönetim paneli nav-pills için özel stiller */
+.nav-pills {
+  margin-bottom: 1.5rem;
+}
+
+.nav-pills .nav-link {
+  font-weight: 500;
+  color: #343a40;
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  margin-right: 0.5rem;
+}
+
+.nav-pills .nav-link:hover {
+  background-color: #e9ecef;
+}
+
+.nav-pills .nav-link.active {
+  background-color: #fd7e14;
+  color: white !important;
+  font-weight: 600;
+  border-color: #fd7e14;
+  box-shadow: 0 3px 8px rgba(253, 126, 20, 0.25);
+}
+
+.nav-pills .nav-link.active i {
+  color: white !important;
+} 

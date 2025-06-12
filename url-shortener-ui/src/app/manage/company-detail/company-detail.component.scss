@@ -1,0 +1,118 @@
+/* CompanyDetailComponent için stiller */ 
+.container {
+  margin-top: 0.5rem !important;
+  padding-top: 0.5rem !important;
+}
+
+.card {
+  margin-top: 0 !important;
+}
+
+.pagination {
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  flex-flow: row wrap;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.pagination .page-item {
+  margin: 0 1px;
+}
+
+.pagination .page-item .page-link {
+  color: #fd7e14;
+  background-color: transparent;
+  border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+  color: #ffffff !important;
+  background-color: #fd7e14;
+  border-color: #fd7e14;
+  font-weight: 500;
+}
+
+.pagination .page-item .page-link:hover {
+  color: #fff;
+  background-color: #fd7e14;
+  border-color: #fd7e14;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #6c757d;
+  background-color: #fff;
+  border-color: #dee2e6;
+}
+
+/* URL linkleri için geliştirilmiş stil */
+.list-group-item a.url-link {
+  color: #fd7e14;
+  text-decoration: none;
+  position: relative;
+  display: block;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  background-color: rgba(253, 126, 20, 0.1);
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  word-break: break-all;
+  max-width: 100%;
+  line-height: 1.5;
+}
+
+.list-group-item a.url-link:hover {
+  color: #fff;
+  background-color: #fd7e14;
+  text-decoration: none;
+  box-shadow: 0 2px 5px rgba(253, 126, 20, 0.3);
+}
+
+/* URL bilgi satırı */
+.url-info {
+  margin-top: 4px;
+}
+
+/* Badge stilini iyileştir */
+.badge.bg-primary {
+  background-color: #fd7e14 !important;
+  color: white;
+  font-weight: 500;
+  padding: 0.4em 0.6em;
+}
+
+.badge.bg-light {
+  color: #333 !important;
+  border: 1px solid #ddd;
+}
+
+/* URL kartı */
+.list-group-item {
+  padding: 1rem;
+  border-radius: 6px !important;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+  background-color: #fffaf5;
+}
+
+@media (max-width: 900px) {
+  .pagination {
+    font-size: 0.95rem;
+    max-width: 100vw;
+    padding: 0 2px;
+  }
+}
+
+@media (max-width: 600px) {
+  .pagination {
+    font-size: 0.85rem;
+    max-width: 98vw;
+    padding: 0 1px;
+  }
+} 

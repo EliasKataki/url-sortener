@@ -1,0 +1,44 @@
+<div class="login-container">
+  <h2>Giriş Yap</h2>
+  
+  <div *ngIf="error" class="error-box">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+  </div>
+  
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div>
+      <label>Email Adresiniz</label>
+      <input 
+        formControlName="email" 
+        type="email" 
+        placeholder="Email adresinizi girin" 
+        autocomplete="email"
+      />
+      <div *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="error">
+        <i class="fas fa-exclamation-triangle me-2"></i>Geçerli bir email adresi girin.
+      </div>
+    </div>
+    
+    <div>
+      <label>Şifreniz</label>
+      <input 
+        formControlName="password" 
+        type="password" 
+        placeholder="Şifrenizi girin"
+        autocomplete="current-password"
+      />
+      <div *ngIf="form.get('password')?.invalid && form.get('password')?.touched" class="error">
+        <i class="fas fa-exclamation-triangle me-2"></i>Şifre alanı zorunludur.
+      </div>
+    </div>
+    
+    <button type="submit" [disabled]="form.invalid || loading">
+      <span *ngIf="!loading">Giriş Yap</span>
+      <span *ngIf="loading"><i class="fas fa-spinner fa-spin me-2"></i>Giriş yapılıyor...</span>
+    </button>
+  </form>
+  
+  <div class="register-link">
+    <a routerLink="/register">Hesabınız yok mu? Kayıt olun</a>
+  </div>
+</div> 

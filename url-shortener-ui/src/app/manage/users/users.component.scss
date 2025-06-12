@@ -1,0 +1,185 @@
+:host {
+  .btn-action {
+    transition: all 0.2s;
+    border-radius: 22px;
+    padding: 7px 18px;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 2px solid transparent;
+    background: #fff;
+    min-width: 110px;
+    height: 38px;
+    font-weight: 500;
+    box-shadow: none;
+    outline: none;
+    cursor: pointer;
+    
+    i {
+      font-size: 1rem;
+    }
+  }
+
+  .btn-link {
+    @extend .btn-action;
+    border-color: #ff6b35;
+    color: #ff6b35;
+    
+    &:hover {
+      background: rgba(255, 107, 53, 0.08);
+      color: #fff;
+      border-color: #ff6b35;
+      
+      i {
+        color: #fff;
+      }
+    }
+  }
+
+  .btn-delete {
+    @extend .btn-action;
+    border-color: #dc3545;
+    color: #dc3545;
+    
+    &:hover {
+      background: rgba(220, 53, 69, 0.08);
+      color: #fff;
+      border-color: #dc3545;
+      
+      i {
+        color: #fff;
+      }
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    align-items: center;
+  }
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  background: linear-gradient(135deg, #ff7a00 60%, #ffb347 100%);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25em 0.9em;
+  border-radius: 16px;
+  font-size: 0.95em;
+  font-weight: 500;
+  background: #f3f3f3;
+  color: #333;
+  &.admin { background: #e3f2fd; color: #1976d2; }
+  &.user { background: #fce4ec; color: #d81b60; }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25em 0.9em;
+  border-radius: 16px;
+  font-size: 0.95em;
+  font-weight: 500;
+  background: #e8f5e9;
+  color: #388e3c;
+  &.inactive { background: #ffebee; color: #c62828; }
+}
+
+.card {
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+
+.table {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.table thead th {
+  font-weight: 600;
+  font-size: 1rem;
+  background: #f7f7f7;
+  border-bottom: 2px solid #ececec;
+}
+
+.table tbody tr {
+  transition: box-shadow 0.2s, background 0.2s;
+  &:hover {
+    background: #f9f9f9;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+}
+
+.action-buttons button {
+  border-radius: 22px !important;
+  height: 38px !important;
+  padding: 7px 18px !important;
+  font-size: 0.95rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  box-shadow: none !important;
+  outline: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.btn-link, .btn-delete {
+  border-radius: 22px !important;
+  height: 38px !important;
+  padding: 7px 18px !important;
+  font-size: 0.95rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  border: 2px solid transparent !important;
+  background: #fff !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.btn-link {
+  border-color: #ff7a00;
+  color: #ff7a00;
+  &:hover {
+    background: #ff7a00;
+    color: #fff;
+  }
+}
+
+.btn-delete {
+  border-color: #dc3545;
+  color: #dc3545;
+  &:hover {
+    background: #dc3545;
+    color: #fff;
+  }
+}
+
+h2 .fa-users {
+  font-size: 1.5em !important;
+  vertical-align: middle !important;
+  display: inline-block !important;
+  margin-right: 0.5em !important;
+  color: #ff7a00 !important;
+} 

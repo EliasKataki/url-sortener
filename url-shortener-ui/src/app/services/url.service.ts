@@ -6,21 +6,35 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class UrlService {
-  private apiUrl = 'http://localhost:5161/api/url';
+  // API URL yapılandırması
+  private readonly apiUrl: string;
 
-  constructor(private http: HttpClient) { }
-
-  shortenUrl(longUrl: string): Observable<any> {
-    const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    return this.http.post(`${this.apiUrl}/shorten`, { url: longUrl }, { 
-      headers: headers,
-      withCredentials: true 
-    });
+  constructor(private http: HttpClient) {
+    // Eğer özel bir konfigürasyon olsaydı buradan alınabilirdi
+    // Şimdilik varsayılan değeri kullanıyoruz
+    this.apiUrl = 'http://localhost:5161';
   }
 
+  shortenUrl(longUrl: string, token: string | null, expiresAt: string | null): Observable<any> {
+    const dto = { longUrl: longUrl, token: token ?? "", expiresAt: expiresAt };
+    return this.http.post(this.apiUrl, dto);
+  }
+
+  getUrlDetailsById(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/details/${id}`);
+  }
+
+  deleteUrl(urlId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${urlId}`);
+  }
+
+  updateUrlExpiresAt(urlId: number, dto: { expiresAt: string | null }): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${urlId}/expires`, dto);
+  }
+
+  /*
   getUrlStats(shortUrl: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/stats/${shortUrl}`, { 
-      withCredentials: true 
-    });
+    return this.http.get(`${this.apiUrl}/stats/${shortUrl}`);
   }
+  */
 } 

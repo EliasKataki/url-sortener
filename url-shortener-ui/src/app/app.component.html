@@ -175,90 +175,104 @@
       margin-block: 1.5rem;
     }
   }
+
+  .role-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.95em;
+    margin-left: 10px;
+    color: #fff;
+    font-weight: bold;
+    vertical-align: middle;
+  }
+  .role-badge.superadmin { background: #d32f2f; }
+  .role-badge.admin { background: #1976d2; }
+  .role-badge.user { background: #388e3c; }
 </style>
 
-<div class="container">
-  <h1>URL Kısaltıcı</h1>
-  
-  <div class="url-form">
-    <input 
-      type="text" 
-      [(ngModel)]="longUrl" 
-      placeholder="Uzun URL'yi buraya yapıştırın"
-      class="url-input"
-    >
-    <button (click)="shortenUrl()" class="shorten-button">Kısalt</button>
-  </div>
-
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
-
-  <div *ngIf="shortUrl" class="result">
-    <h2>Kısa URL'niz:</h2>
-    <div class="short-url-container">
-      <input 
-        type="text" 
-        [value]="shortUrl" 
-        readonly 
-        class="short-url-input"
-      >
-      <button (click)="copyToClipboard()" class="copy-button">Kopyala</button>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light sticky-top shadow-sm">
+  <div class="container-fluid navbar-container">
+    <a class="navbar-brand fs-4 fw-bold" routerLink="/home">
+      <i class="fas fa-link me-2 text-primary"></i>Octa Shortener
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <!-- Her zaman görünen linkler -->
+        <li class="nav-item" *ngIf="isLoggedIn">
+          <a class="nav-link custom-nav-link" routerLink="/home" routerLinkActive="active-link">
+            <i class="fas fa-home me-2"></i> Ana Sayfa
+          </a>
+        </li>
+        
+        <!-- Sadece giriş yapmış kullanıcılar -->
+        <ng-container *ngIf="isLoggedIn">
+          <li class="nav-item dropdown">
+            <button class="nav-link custom-nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-cogs me-2"></i> Yönetim
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" routerLink="/manage/companies" routerLinkActive="active">
+                  <i class="fas fa-building me-2"></i> Firmaları Yönet
+                </a>
+              </li>
+              <li *ngIf="isSuperAdmin">
+                <a class="dropdown-item" routerLink="/manage/users" routerLinkActive="active">
+                  <i class="fas fa-users me-2"></i> Kullanıcıları Yönet
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link custom-nav-link" (click)="logout()" style="cursor: pointer;">
+              <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+            </a>
+          </li>
+          <li class="nav-item">
+            <span class="nav-link user-welcome">
+              <i class="fas fa-user me-2"></i> Hoş Geldin, <span class="fw-bold">{{ userName }}</span>
+              <span *ngIf="userRole" class="role-badge" [ngClass]="userRole.toLowerCase()">{{ userRole }}</span>
+            </span>
+          </li>
+        </ng-container>
+        
+        <!-- Giriş yapmamış kullanıcılar -->
+        <ng-container *ngIf="!isLoggedIn">
+          <li class="nav-item">
+            <a class="nav-link custom-nav-link" routerLink="/login" routerLinkActive="active-link">
+              <i class="fas fa-sign-in-alt me-2"></i> Giriş Yap
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link custom-nav-link" routerLink="/register" routerLinkActive="active-link">
+              <i class="fas fa-user-plus me-2"></i> Kayıt Ol
+            </a>
+          </li>
+        </ng-container>
+      </ul>
     </div>
   </div>
+</nav>
 
-  <div *ngIf="stats" class="stats">
-    <h2>İstatistikler</h2>
-    <div class="stats-grid">
-      <div class="stat-item">
-        <h3>Toplam Erişim</h3>
-        <p>{{ stats.totalAccesses }}</p>
-      </div>
-      <div class="stat-item">
-        <h3>Başarılı Erişim</h3>
-        <p>{{ stats.successfulAccesses }}</p>
-      </div>
-      <div class="stat-item">
-        <h3>Başarısız Erişim</h3>
-        <p>{{ stats.failedAccesses }}</p>
-      </div>
-      <div class="stat-item">
-        <h3>Son Erişim</h3>
-        <p>{{ stats.lastAccess | date:'medium' }}</p>
-      </div>
-    </div>
-
-    <div class="access-details">
-      <h3>Erişim Detayları</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Tarih</th>
-            <th>Durum</th>
-            <th>Tarayıcı</th>
-            <th>IP Adresi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let access of stats.accessDetails">
-            <td>{{ access.accessDate | date:'medium' }}</td>
-            <td>{{ access.isSuccessful ? 'Başarılı' : 'Başarısız' }}</td>
-            <td>{{ access.userAgent }}</td>
-            <td>{{ access.ipAddress }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+<!-- İçerik -->
+<main class="flex-shrink-0">
+  <div class="container my-4">
+    <router-outlet></router-outlet>
   </div>
-</div>
+</main>
 
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * * The content above * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * is only a placeholder * * * * * * * * * * * -->
-<!-- * * * * * * * * * * and can be replaced.  * * * * * * * * * * * -->
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * End of Placeholder  * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- Footer -->
+<footer class="mt-auto py-3 text-center">
+  <div class="container">
+    <span class="text-muted">© 2025 Octa Shortener | <i class="fas fa-heart text-primary"></i> ile geliştirildi</span>
+  </div>
+</footer>
 
-
-<router-outlet />
+<script>
+  // Angular component'te selectedSection değişkeni olmalı
+</script>

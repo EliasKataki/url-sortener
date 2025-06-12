@@ -1,0 +1,74 @@
+<div class="register-container">
+  <h2>Kayıt Ol</h2>
+  
+  <div *ngIf="error" class="error-box">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+  </div>
+  
+  <div *ngIf="success" class="success-box">
+    <i class="fas fa-check-circle me-2"></i>{{ success }}
+  </div>
+  
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div>
+      <label>Adınız</label>
+      <input 
+        formControlName="firstName" 
+        type="text" 
+        placeholder="Tam adınızı girin (örn: Mustafa Kemal)" 
+        autocomplete="given-name"
+      />
+      <div *ngIf="form.get('firstName')?.invalid && form.get('firstName')?.touched" class="error">
+        <i class="fas fa-exclamation-triangle me-2"></i>İsim alanı zorunludur.
+      </div>
+    </div>
+    
+    <div>
+      <label>Soyadınız</label>
+      <input 
+        formControlName="lastName" 
+        type="text" 
+        placeholder="Soyadınızı girin" 
+        autocomplete="family-name"
+      />
+      <div *ngIf="form.get('lastName')?.invalid && form.get('lastName')?.touched" class="error">
+        <i class="fas fa-exclamation-triangle me-2"></i>Soyisim alanı zorunludur.
+      </div>
+    </div>
+    
+    <div>
+      <label>Email Adresiniz</label>
+      <input 
+        formControlName="email" 
+        type="email" 
+        placeholder="Email adresinizi girin" 
+        autocomplete="email"
+      />
+      <div *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="error">
+        <i class="fas fa-exclamation-triangle me-2"></i>Geçerli bir email adresi girin.
+      </div>
+    </div>
+    
+    <div>
+      <label>Şifreniz</label>
+      <input 
+        formControlName="password" 
+        type="password" 
+        placeholder="En az 6 karakter" 
+        autocomplete="new-password"
+      />
+      <div *ngIf="form.get('password')?.invalid && form.get('password')?.touched" class="error">
+        <i class="fas fa-exclamation-triangle me-2"></i>Şifre en az 6 karakter olmalıdır.
+      </div>
+    </div>
+    
+    <button type="submit" [disabled]="form.invalid || loading">
+      <span *ngIf="!loading">Kayıt Ol</span>
+      <span *ngIf="loading"><i class="fas fa-spinner fa-spin me-2"></i>Kaydediliyor...</span>
+    </button>
+  </form>
+  
+  <div class="login-link">
+    <a routerLink="/login">Zaten hesabınız var mı? Giriş yapın</a>
+  </div>
+</div> 

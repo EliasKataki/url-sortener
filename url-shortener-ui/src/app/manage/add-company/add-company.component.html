@@ -1,0 +1,25 @@
+<div class="container mt-4">
+  <h3><i class="fas fa-plus-circle me-2 text-warning"></i> Firma Ekle</h3>
+  <hr>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <form (ngSubmit)="saveCompany()">
+    <div class="mb-3">
+      <label for="companyNameInput" class="form-label">Firma Adı:</label>
+      <input type="text" class="form-control" id="companyNameInput" [(ngModel)]="companyName" name="companyName" required>
+    </div>
+    <div class="mb-3">
+      <label for="tokenCountInput" class="form-label">Başlangıç Token Sayısı:</label>
+      <input type="number" class="form-control" id="tokenCountInput" [(ngModel)]="tokenCount" name="tokenCount" min="1" required>
+    </div>
+    <button type="submit" class="btn btn-warning" [disabled]="!companyName || tokenCount < 1">
+      <i class="fas fa-save me-2"></i>Kaydet
+    </button>
+  </form>
+</div> 

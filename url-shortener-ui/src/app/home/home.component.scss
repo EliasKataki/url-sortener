@@ -1,0 +1,115 @@
+/* HomeComponent için stiller */ 
+
+// Ana sayfa temel stilleri
+.hero-section {
+  padding: 4rem 0;
+  position: relative;
+}
+
+// Öne çıkan özellikler listesi
+.features-list {
+  .feature-item {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    
+    i {
+      font-size: 1.25rem;
+      min-width: 30px;
+    }
+  }
+}
+
+// Hero görseli
+.hero-image {
+  position: relative;
+  
+  img {
+    transition: transform 0.5s ease;
+    
+    &:hover {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+// Özellik ikonları için yuvarlak arka plan
+.feature-icon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  border-radius: 50%;
+  background-color: var(--bs-primary-light);
+}
+
+// Kartlar arası animasyon
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+  }
+}
+
+// Responsiveness
+@media (max-width: 992px) {
+  .hero-section {
+    text-align: center;
+    padding: 2rem 0;
+  }
+  
+  .features-list {
+    max-width: 450px;
+    margin: 0 auto;
+  }
+}
+
+// Birincil renk vurguları
+.text-primary {
+  color: var(--bs-primary) !important;
+}
+
+.bg-primary-light {
+  background-color: var(--bs-primary-light) !important;
+}
+
+// Animasyonlar ve geçişler
+.hero-section h1,
+.hero-section p,
+.hero-section .btn,
+.features-list {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.hero-image,
+.card {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.welcome-box {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+} 

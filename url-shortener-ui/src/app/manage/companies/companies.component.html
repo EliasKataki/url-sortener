@@ -1,0 +1,68 @@
+<div class="container-fluid mt-4 px-4">
+  <div class="row">
+    <div class="col-12">
+      <h2 class="mb-4"><i class="fas fa-building me-2 text-warning"></i> Firma Yönetimi</h2>
+
+      <div *ngIf="isLoading" class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Yükleniyor...</span>
+        </div>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-danger">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="!isLoading && !errorMessage">
+        <div *ngIf="companies.length > 0; else noCompanies">
+          <div class="card shadow-sm">
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="bg-light">
+                    <tr>
+                      <th class="px-3 py-3">ID</th>
+                      <th class="px-3 py-3">Firma Adı</th>
+                      <th class="px-3 py-3 d-none d-md-table-cell">Oluşturulma</th>
+                      <th class="px-3 py-3 d-none d-sm-table-cell">Token</th>
+                      <th class="px-3 py-3 d-none d-sm-table-cell">URL</th>
+                      <th class="px-3 py-3 text-end">İşlemler</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let company of companies">
+                      <td class="px-3 py-3">{{ company.id }}</td>
+                      <td class="px-3 py-3">{{ company.name }}</td>
+                      <td class="px-3 py-3 d-none d-md-table-cell">{{ getLocalTime(company.createdAt) }}</td>
+                      <td class="px-3 py-3 d-none d-sm-table-cell">{{ company.tokens?.length || 0 }}</td>
+                      <td class="px-3 py-3 d-none d-sm-table-cell">{{ company.urls?.length || 0 }}</td>
+                      <td class="px-3 py-3 text-end">
+                        <div class="d-flex gap-2 justify-content-end">
+                          <button class="btn btn-primary btn-sm rounded-pill px-3" [routerLink]="['/manage/company', company.id]" title="Detaylar">
+                            <i class="fas fa-eye me-1"></i>
+                            <span class="d-none d-sm-inline">Detay</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-template #noCompanies>
+          <div class="alert alert-info text-center">
+            <ng-container *ngIf="isSuperAdmin">
+              Gösterilecek firma bulunamadı. 
+              <a routerLink="/manage/add-company" class="alert-link">Yeni firma ekleyin</a>.
+            </ng-container>
+            <ng-container *ngIf="!isSuperAdmin">
+              Size atanmış firma bulunamadı. Lütfen yöneticiniz ile iletişime geçin.
+            </ng-container>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div> 

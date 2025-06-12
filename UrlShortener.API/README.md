@@ -1,178 +1,130 @@
-# URL Kısaltma Projesi Dökümantasyonu
+# Octa Shortener - URL Kısaltma ve Yönetim Sistemi
 
-## Proje Hakkında
+## Projenin Amacı
 
-URL Kısaltma projesi, uzun URL'leri kısa ve kullanımı kolay bağlantılara dönüştüren bir web uygulamasıdır. Proje, .NET Core API ve veritabanı backend ile oluşturulmuştur. Uygulama, URL kısaltma, yönlendirme, istatistik izleme ve loglama özellikleri sunar.
+Octa Shortener, uzun URL'leri kısa ve kolay paylaşılabilir bağlantılara dönüştüren, şirket bazlı token yönetimi, kullanıcı rolleri ve detaylı tıklama istatistikleri sunan modern bir web uygulamasıdır. Proje, .NET 8.0 tabanlı bir API ve Angular tabanlı bir yönetim paneli içerir.
+
+## Temel Özellikler
+- Uzun URL'leri kısa linklere dönüştürme
+- Şirket bazlı token yönetimi (token ile kısaltma yetkisi)
+- Kullanıcı rolleri: SuperAdmin, Admin, User
+- Rol bazlı yetkilendirme ve arayüz
+- Tıklama istatistikleri ve harita üzerinde görselleştirme
+- Konum zorunluluğu: Kısa linke tıklayan herkesin konum bilgisinin alınması zorunludur, aksi halde yönlendirme yapılmaz
+- Modern, responsive ve kullanıcı dostu arayüz
 
 ## Sistem Gereksinimleri
-
 - .NET 8.0 SDK
-- SQL Server 2022
-- Docker (veritabanı için)
+- Node.js 18+
+- Angular CLI 19+
+- SQL Server 2022 (Docker ile kolay kurulum önerilir)
 - Modern bir web tarayıcısı
 
-## Mimari Yapı
+## Proje Yapısı
+- **UrlShortener.API/** : .NET 8.0 tabanlı backend API
+- **url-shortener-ui/** : Angular tabanlı frontend yönetim paneli
 
-Proje iki ana bileşenden oluşur:
+---
 
-1. **Backend API (UrlShortener.API)**: .NET Core API projesi
-2. **Veritabanı**: SQL Server 2022 (Docker konteynerinde çalışır)
+## Kurulum ve Çalıştırma
 
-### Veritabanı Şeması
-
-Veritabanı aşağıdaki tablolardan oluşur:
-
-- **Urls**: Kısaltılan URL'leri depolar
-  - Id (int, PK)
-  - LongUrl (nvarchar(max))
-  - ShortUrl (nvarchar(max))
-  - CreatedDate (datetime2)
-  - ExpirationDate (datetime2)
-
-- **UrlAccesses**: URL erişim kayıtlarını takip eder
-  - Id (int, PK)
-  - UrlId (int, FK)
-  - AccessDate (datetime2)
-  - IsSuccessful (bit)
-  - ErrorMessage (nvarchar(max), nullable)
-  - UserAgent (nvarchar(max), nullable)
-  - IpAddress (nvarchar(max), nullable)
-
-- **UrlLogs**: Sistemdeki tüm URL işlemlerini loglar
-  - Id (int, PK)
-  - LongUrl (nvarchar(max))
-  - ShortUrl (nvarchar(max))
-  - CreatedAt (datetime2)
-  - Operation (nvarchar(max))
-  - UserAgent (nvarchar(max), nullable)
-  - IpAddress (nvarchar(max), nullable)
-  - IsSuccessful (bit)
-  - ErrorMessage (nvarchar(max), nullable)
-
-## API Endpoint'leri
-
-API aşağıdaki endpoint'leri sunar:
-
-| HTTP Metodu | Endpoint | Açıklama |
-|-------------|----------|----------|
-| POST | /api/url/shorten | Uzun URL'yi kısaltır |
-| GET | /api/url/{code} | Kısa URL'yi kullanarak yönlendirme yapar |
-| GET | /api/url/stats/{fullUrl} | URL istatistiklerini görüntüler |
-| GET | /api/url/list | Tüm URL'leri listeler |
-| GET | /api/url/list/memory | Bellek tabanlı URL listesini görüntüler |
-| GET | /api/url/list/database | Veritabanından URL listesini alır |
-| GET | /api/url/logs | Sistem loglarını görüntüler |
-
-### Örnek İstek ve Yanıtlar
-
-#### URL Kısaltma (POST /api/url/shorten)
-
-İstek:
-```json
-{
-  "url": "https://www.example.com"
-}
-```
-
-Yanıt:
-```json
-{
-  "shortUrl": "http://localhost:5161/api/url/abC12345"
-}
-```
-
-#### URL İstatistikleri (GET /api/url/stats/{fullUrl})
-
-Yanıt:
-```json
-{
-  "originalUrl": "https://www.example.com",
-  "shortCode": "abC12345",
-  "shortUrl": "http://localhost:5161/api/url/abC12345",
-  "createdDate": "2025-04-22T10:30:00",
-  "expirationDate": "2025-05-22T10:30:00",
-  "totalAccesses": 5,
-  "successfulAccesses": 4,
-  "failedAccesses": 1,
-  "lastAccess": "2025-04-22T15:45:00",
-  "accessDetails": [
-    {
-      "accessDate": "2025-04-22T15:45:00",
-      "isSuccessful": true,
-      "userAgent": "Mozilla/5.0...",
-      "ipAddress": "127.0.0.1"
-    }
-  ]
-}
-```
-
-## Kurulum Adımları
-
-### Veritabanı Kurulumu
-
-1. Docker'ı yükleyin ve çalıştırın
-2. SQL Server konteynerini başlatın:
-```
+### 1. Veritabanı (SQL Server) Kurulumu
+```bash
 docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=SqlServer2024!" -p 1433:1433 --name mssql -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-### API Kurulumu
+### 2. Backend (API) Kurulumu
+```bash
+cd UrlShortener.API
+dotnet restore
+dotnet ef database update
+dotnet run
+```
+API varsayılan olarak `http://localhost:5161` adresinde çalışır.
 
-1. Projeyi klonlayın
-2. API dizinine gidin: `cd UrlShortener.API`
-3. Bağımlılıkları yükleyin: `dotnet restore`
-4. Migration'ları uygulayın: `dotnet ef database update`
-5. API'yi çalıştırın: `dotnet run`
+### 3. Frontend (Angular) Kurulumu
+```bash
+cd url-shortener-ui
+npm install
+ng serve
+```
+Uygulama varsayılan olarak `http://localhost:4200` adresinde çalışır.
 
-## Geliştirici Notları
+---
 
-### CORS Yapılandırması
+## Kullanıcı Rolleri ve Yetkiler
+- **SuperAdmin:** Tüm şirket ve kullanıcı yönetimi, token işlemleri, link oluşturma ve silme yetkisi.
+- **Admin:** Kendi şirketi için token ve link yönetimi, istatistik görüntüleme.
+- **User:** Sadece admin/süper admin tarafından oluşturulmuş kısa linkleri görebilir ve tıklayabilir. Token, harita, link oluşturma, silme ve düzenleme yetkisi yoktur.
 
-API, aşağıdaki origin'lerden gelen isteklere CORS desteği sağlar:
-- http://localhost:4200
-- http://localhost:3000
-- http://localhost:8080
-- http://127.0.0.1:4200
-- http://127.0.0.1:3000
-- http://127.0.0.1:8080
+### Rol Bazlı Arayüz
+- User'lar sade ve kısıtlı bir arayüz görür.
+- Admin ve SuperAdmin'ler tüm yönetim ve istatistik panellerine erişebilir.
 
-Yeni bir origin eklemek için `Program.cs` dosyasında CORS ayarlarını güncelleyin.
+---
 
-### URL İşleme Mantığı
+## Konum Zorunluluğu ve Güvenlik
+- Kısa linke tıklayan herkesin konum bilgisinin (latitude, longitude, markerType) alınması zorunludur.
+- Konum alınamazsa (ör. gizli sekme, izin verilmemesi), **yönlendirme yapılmaz** ve kullanıcıya uyarı gösterilir.
+- Bu kontrol hem frontend'de hem de backend'de zorunlu tutulmuştur.
+- Tüm tıklamalar IP, user-agent ve konum ile birlikte loglanır.
 
-1. URL kısaltma:
-   - Uzun URL alınır
-   - http:// veya https:// yoksa https:// eklenir
-   - URL encode edilir
-   - Benzersiz 8 karakterlik bir kod oluşturulur
-   - Veritabanına kaydedilir
-   - Kısa URL döndürülür
+---
 
-2. URL yönlendirme:
-   - Kısa kod alınır
-   - Veritabanında aranır
-   - Süre kontrolü yapılır
-   - İstatistikler güncellenir
-   - Orijinal URL'ye yönlendirilir
+## API Endpointleri (Özet)
+- `POST /api/url/shorten` : Uzun URL'yi kısaltır (token ile)
+- `GET /{shortUrl}?latitude=...&longitude=...&markerType=...` : Kısa link yönlendirmesi (konum zorunlu)
+- `GET /api/url/details/{id}` : Kısa link detayları ve istatistikleri
+- `POST /api/auth/login` : Kullanıcı girişi
+- `POST /api/auth/register` : Kullanıcı kaydı (SuperAdmin yetkisiyle)
+- `GET /api/company` : Şirket ve token yönetimi
 
-## Hata Yönetimi
+---
 
-API, aşağıdaki hata durumlarını ele alır:
+## Frontend (Angular) Kullanımı
+- `ng serve` ile başlatılır.
+- Rol bazlı arayüz otomatik olarak açılır.
+- User'lar sadece kısa linkleri görebilir ve tıklayabilir.
+- Admin/SuperAdmin token, link, şirket ve kullanıcı yönetimi yapabilir.
+- Tüm işlemler için API ile güvenli iletişim sağlanır.
 
-- Geçersiz URL formatı
-- Bulunamayan URL kodları
-- Süresi dolmuş URL'ler
-- Veritabanı bağlantı hataları
+---
 
-Tüm hatalar loglanır ve uygun HTTP durum kodlarıyla birlikte hata mesajları döndürülür.
+## Gelişmiş Özellikler ve Modern UX
+- Responsive ve mobil uyumlu tasarım
+- Kullanıcıya özel uyarı ve hata mesajları
+- Token ve link işlemlerinde anlık bildirimler
+- Harita üzerinde tıklama görselleştirmesi (admin/süper admin için)
+- Kapsamlı loglama ve hata yönetimi
 
-## Güvenlik Önlemleri
+---
 
-- SQL injection koruması (Entity Framework kullanımı)
-- URL'lerin encode edilmesi
-- Erişim logları ve IP adresi takibi
+## Güvenlik ve Performans
+- SQL injection ve XSS koruması
+- JWT tabanlı kimlik doğrulama (gerekirse eklenebilir)
+- API rate limit ve CORS ayarları
+- Asenkron işlemler ve hızlı yanıt süreleri
 
-## Performans İyileştirmeleri
+---
 
-- Entity Framework için uygun indeksler
-- API yanıt hızını optimize etmek için asenkron metodlar 
+## Sıkça Sorulan Sorular
+
+**S: Konum izni vermezsem linke gidebilir miyim?**
+C: Hayır, konum izni olmadan kısa linkin yönlendirdiği uzun linke erişemezsiniz.
+
+**S: User rolü ile link oluşturabilir miyim?**
+C: Hayır, sadece admin ve süper adminler link oluşturabilir.
+
+**S: Tüm tıklamalar kaydediliyor mu?**
+C: Evet, IP, user-agent ve konum ile birlikte tüm tıklamalar loglanır.
+
+---
+
+## Katkı ve Geliştirme
+- Kodunuzu forkladıktan sonra PR gönderebilirsiniz.
+- Hataları veya önerileri issue olarak açabilirsiniz.
+
+---
+
+## Lisans
+MIT 

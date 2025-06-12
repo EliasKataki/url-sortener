@@ -1,0 +1,273 @@
+<div class="container mt-4">
+  <ng-container *ngIf="company$ | async as company; else loadingOrError">
+    <div *ngIf="company; else noCompanyFound">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a routerLink="/manage/companies">Firmalar</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ company.name }}</li>
+        </ol>
+      </nav>
+      
+      <h3>{{ company.name }} Detayları
+        <button *ngIf="isSuperAdmin" class="btn btn-sm btn-danger ms-2" (click)="deleteCompany(company.id)">
+          <i class="fas fa-trash"></i> Firma Sil
+        </button>
+      </h3>
+      <p>Oluşturulma Tarihi: {{ getLocalTime(company.createdAt) }}</p>
+      <hr>
+
+      <div class="row">
+        <!-- Tokenlar Kartı - Tam Genişlik -->
+        <ng-container *ngIf="!isUser">
+        <div class="col-12 mb-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h4 class="card-title">Tokenlar ({{ company.tokens?.length || 0 }})</h4>
+              <div *ngIf="updateTokenSuccess" class="alert alert-success alert-dismissible fade show small p-2" role="alert">
+                 {{ updateTokenSuccess }}
+                 <button type="button" class="btn-close btn-sm p-2" (click)="updateTokenSuccess = ''" aria-label="Close"></button>
+              </div>
+              <div *ngIf="updateTokenError" class="alert alert-danger alert-dismissible fade show small p-2" role="alert">
+                 {{ updateTokenError }}
+                 <button type="button" class="btn-close btn-sm p-2" (click)="updateTokenError = ''" aria-label="Close"></button>
+              </div>
+              <div *ngIf="company.tokens && company.tokens.length > 0; else noTokens">
+                <div class="list-group mb-3">
+                  <div class="list-group-item" *ngFor="let token of pagedTokens">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                      <div>
+                        <span class="text-monospace small d-block">{{ token.value }}</span>
+                        <small class="text-muted">Oluş: {{ token.createdAt | date:'short':'':'tr-TR' }} | Bitiş: {{ token.expiresAt | date:'short':'':'tr-TR' }}</small>
+                      </div>
+                      <div class="d-flex align-items-center">
+                        <ng-container *ngIf="isSuperAdmin">
+                          <input type="number" 
+                                 id="tokenUses-{{token.id}}" 
+                                 class="form-control form-control-sm me-2" 
+                                 style="width: 80px;" 
+                                 [(ngModel)]="token.remainingUses" 
+                                 min="0"
+                                 [disabled]="updatingTokenId === token.id" />
+                          <button class="btn btn-sm btn-primary me-2" 
+                                  (click)="updateTokenUses(token)" 
+                                  [disabled]="updatingTokenId === token.id" 
+                                  title="Kalan Hakkı Kaydet">
+                             <span *ngIf="updatingTokenId !== token.id"><i class="fas fa-save"></i></span>
+                             <span *ngIf="updatingTokenId === token.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                          </button>
+                          <button class="btn btn-sm btn-danger" (click)="deleteToken(token.id)"><i class="fas fa-trash"></i></button>
+                        </ng-container>
+                        <ng-container *ngIf="isAdmin">
+                          <input type="number" 
+                                 id="tokenUses-{{token.id}}" 
+                                 class="form-control form-control-sm me-2" 
+                                 style="width: 80px;" 
+                                 [value]="token.remainingUses" 
+                                 readonly />
+                        </ng-container>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Sayfalama butonları -->
+                <nav *ngIf="totalPages > 1" class="d-flex justify-content-center">
+                  <ul class="pagination pagination-sm">
+                    <li class="page-item" [class.disabled]="currentPage === 1">
+                      <button class="page-link" (click)="setPage(currentPage - 1)" [disabled]="currentPage === 1">&laquo;</button>
+                    </li>
+                    <li class="page-item" *ngFor="let page of [].constructor(totalPages); let i = index" [class.active]="currentPage === (i+1)">
+                      <button class="page-link" (click)="setPage(i+1)">{{ i+1 }}</button>
+                    </li>
+                    <li class="page-item" [class.disabled]="currentPage === totalPages">
+                      <button class="page-link" (click)="setPage(currentPage + 1)" [disabled]="currentPage === totalPages">&raquo;</button>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+              <ng-template #noTokens><p class="text-muted">Bu firmaya ait token bulunamadı.</p></ng-template>
+            </div>
+          </div>
+        </div>
+        </ng-container>
+
+        <!-- URL'ler Kartı - Tam Genişlik -->
+        <ng-container *ngIf="isUser">
+          <div class="col-12 mb-4 d-flex justify-content-center">
+            <div class="user-url-card p-4 w-100" style="max-width: 500px; background: #fff8f0; border-radius: 18px; box-shadow: 0 2px 16px 0 rgba(255,107,0,0.08); border: 1.5px solid #ffe0c2;">
+              <h4 class="card-title mb-3 text-center" style="color:#ff6b00; font-weight:600;">Kısaltılmış Linkler</h4>
+              <ul class="list-group list-group-flush mb-3 border-0" *ngIf="company.urls && company.urls.length > 0; else noUrls">
+                <li class="list-group-item border-0 bg-transparent p-0 mb-4" *ngFor="let url of company.urls">
+                  <div class="d-flex flex-column align-items-center gap-2">
+                    <a [href]="getFullShortUrl(url.shortUrl)" target="_blank" class="fw-bold px-3 py-2 rounded" style="background:#ffe0c2; color:#ff6b00; font-size:1.1rem; text-decoration:none; word-break:break-all;">{{ getFullShortUrl(url.shortUrl) }}</a>
+                    <span class="badge bg-light text-dark">{{ url.shortUrl }}</span>
+                    <div class="d-flex flex-column align-items-center mt-2 w-100">
+                      <div class="d-flex align-items-center gap-2">
+                        <input type="datetime-local" class="form-control form-control-sm text-center" style="width: 220px; background: #fff; border: 1px solid #ffe0c2; border-radius: 8px;" [(ngModel)]="url.expiresAt" [ngModelOptions]="{standalone: true}" [min]="todayString + 'T00:00'" [readonly]="true" [disabled]="!!url.isForever" />
+                        <div class="form-check ms-2">
+                          <input class="form-check-input" type="checkbox" [(ngModel)]="url.isForever" (change)="onForeverChange(url)" [disabled]="true">
+                          <label class="form-check-label">Süresiz</label>
+                        </div>
+                      </div>
+                      <span class="text-muted small mt-1">
+                        <i class="far fa-clock me-1"></i>
+                        Bitiş: <span *ngIf="url.isForever">Süresiz</span><span *ngIf="!url.isForever">{{ url.expiresAt ? (url.expiresAt | date:'dd.MM.yyyy HH:mm':'':'tr-TR') : 'Belirtilmedi' }}</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+              <ng-template #noUrls><p class="text-muted text-center">Bu firmaya ait URL bulunamadı.</p></ng-template>
+            </div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="!isUser">
+        <div class="col-12 mb-4">
+           <div class="card h-100">
+            <div class="card-body">
+              <h4 class="card-title">URL'ler ({{ company.urls?.length || 0 }})</h4>
+              <ul class="list-group list-group-flush mb-3" *ngIf="company.urls && company.urls.length > 0; else noUrls">
+                <li class="list-group-item" *ngFor="let url of company.urls">
+                  <!-- Üst satır: URL ve tıklama bilgisi -->
+                  <div class="d-flex flex-column w-100 mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                      <ng-container *ngIf="!isUser">
+                        <input type="radio" name="selectedUrl" [value]="url.id"
+                          [checked]="selectedUrlId === url.id"
+                          (click)="toggleUrlSelection(url.id, company)" 
+                          class="me-2">
+                      </ng-container>
+                      <a [href]="getFullShortUrl(url.shortUrl)" target="_blank" 
+                        (click)="handleClick(url, $event)" 
+                        class="url-link fw-bold">
+                        {{ getFullShortUrl(url.shortUrl) }}
+                      </a>
+                    </div>
+                    <div class="url-info ps-4 ms-1">
+                      <span class="badge bg-light text-dark me-2">{{ url.shortUrl }}</span>
+                      <span class="badge bg-primary" *ngIf="!isUser">Tıklanma: {{ url.clickCount }}</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Alt satır: Kontroller -->
+                  <div class="d-flex flex-wrap align-items-center mt-2 ps-4 ms-1">
+                    <div class="d-flex align-items-center me-3 mb-2">
+                      <input type="datetime-local" class="form-control form-control-sm" 
+                        style="width: 210px;"
+                        [(ngModel)]="url.expiresAt"
+                        [ngModelOptions]="{standalone: true}"
+                        [min]="todayString + 'T00:00'"
+                        [disabled]="!!url.isForever"
+                        (ngModelChange)="url.isForever = !url.expiresAt" />
+                      <div class="form-check ms-2">
+                        <input class="form-check-input" type="checkbox" [(ngModel)]="url.isForever" (change)="onForeverChange(url)">
+                        <label class="form-check-label">Süresiz</label>
+                      </div>
+                    </div>
+                    <span class="text-muted small me-3 mb-2">
+                      <i class="far fa-clock me-1"></i>
+                      Bitiş: <span *ngIf="url.isForever">Süresiz</span><span *ngIf="!url.isForever">{{ url.expiresAt ? (url.expiresAt | date:'dd.MM.yyyy HH:mm':'':'tr-TR') : 'Belirtilmedi' }}</span>
+                    </span>
+                    <div class="d-flex">
+                      <button class="btn btn-sm btn-primary me-2" (click)="updateUrlExpiresAt(url)" *ngIf="!isUser">
+                        <i class="fas fa-save me-1"></i>Kaydet
+                      </button>
+                      <button class="btn btn-sm btn-danger" (click)="deleteUrl(url.id)" *ngIf="!isUser">
+                        <i class="fas fa-trash me-1"></i>Sil
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+              <ng-template #noUrls><p class="text-muted">Bu firmaya ait URL bulunamadı.</p></ng-template>
+            </div>
+          </div>
+        </div>
+        </ng-container>
+      </div>
+
+      <hr>
+      <ng-container *ngIf="!isUser">
+      <h4>Tıklama Konumları Haritası</h4>
+      <div id="map" *ngIf="selectedUrlId !== null" style="height: 400px; width: 100%; margin-bottom: 2rem;"></div>
+      <hr>
+      <h4>Bu Firma İçin URL Kısalt</h4>
+      <!-- URL Kısaltma Kartı - Tam Genişlik -->
+      <div class="col-12 mb-4"> 
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div *ngIf="shorteningError" class="alert alert-danger">{{ shorteningError }}</div>
+            <div *ngIf="shorteningResult" class="alert alert-success">Kısa URL: 
+               <a [href]="getShortUrl()" target="_blank">{{ getShortUrl() }}</a>
+               <button class="btn btn-sm btn-outline-secondary ms-2" (click)="copyToClipboard(getShortUrl())">Kopyala</button>
+            </div>
+            
+            <div class="mb-3">
+               <label for="companyLongUrl" class="form-label">Kısaltılacak URL:</label>
+               <input type="url" class="form-control" id="companyLongUrl" [(ngModel)]="newLongUrl" placeholder="https://..." required>
+            </div>
+            <div class="mb-3">
+               <label for="expiresAt" class="form-label">Son Kullanma Tarihi:</label>
+               <div class="d-flex align-items-center gap-3">
+                 <input type="datetime-local" class="form-control" id="expiresAt" [(ngModel)]="newExpiresAt" [min]="todayString + 'T00:00'" [disabled]="isForever" required>
+                 <div class="form-check ms-2">
+                   <input class="form-check-input" type="checkbox" id="foreverCheck" [(ngModel)]="isForever">
+                   <label class="form-check-label" for="foreverCheck">Süresiz</label>
+                 </div>
+               </div>
+               <div class="form-text text-muted">Süresiz seçilirse linkin son kullanma tarihi olmaz ve her zaman aktif kalır.</div>
+            </div>
+            <div class="mb-3">
+               <label for="companyTokenSelect" class="form-label">Kullanılacak Token:</label>
+               <ng-container *ngIf="company?.tokens as tokens">
+                  <select class="form-select" 
+                          id="companyTokenSelect" 
+                          [(ngModel)]="selectedTokenValue" 
+                          [disabled]="tokens.length === 0">
+                    <option [ngValue]="null" disabled>-- Token Seçin --</option>
+                    <ng-container *ngFor="let token of tokens">
+                       <option *ngIf="token.remainingUses > 0" [value]="token.value">{{ token.value }} ({{ token.remainingUses }} hak)</option>
+                    </ng-container>
+                  </select>
+                  <div *ngIf="tokens.length === 0" 
+                       class="form-text text-danger">Bu firma için kullanılabilir token yok.</div>
+               </ng-container>
+               <div *ngIf="!company?.tokens" class="form-text text-muted">Token bilgisi yüklenemedi veya yok.</div>
+            </div>
+            <button class="btn btn-warning" (click)="shortenUrlForCompany()" [disabled]="!newLongUrl || !selectedTokenValue">
+              <i class="fas fa-cut me-2"></i>Firma Adına Kısalt
+            </button>
+          </div>
+        </div>
+      </div>
+      </ng-container>
+
+    </div>
+  </ng-container>
+
+  <ng-template #noCompanyFound>
+    <div class="alert alert-warning">Firma bulunamadı.</div>
+  </ng-template>
+
+  <ng-template #loadingOrError>
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+    <div *ngIf="!errorMessage" class="d-flex justify-content-center my-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Yükleniyor...</span>
+      </div>
+    </div>
+  </ng-template>
+
+  <div *ngIf="modalOpen" class="modal-overlay">
+    <div class="modal-confirm">
+      <h5>{{ modalTitle }}</h5>
+      <p>{{ modalMessage }}</p>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-secondary" (click)="closeModal(false)">Hayır</button>
+        <button class="btn btn-danger" (click)="closeModal(true)">Evet</button>
+      </div>
+    </div>
+  </div>
+
+</div> 
